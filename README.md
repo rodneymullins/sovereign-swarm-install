@@ -249,6 +249,7 @@ python3 ~/.hermes/scripts/pipeline_metrics.py
 
 | Component | What It Does | How to Add |
 |-----------|-------------|------------|
+| **Obsidian Vault** | Markdown knowledge base — create your own notes, entity profiles, case files | **Installed by default** — empty directory at `~/Obsidian-Vault/` |
 | **Knowledge Base** | Hybrid search (semantic + FTS5) — index your own notes and documents | **Installed by default** — add your content, then run `python3 ~/.hermes/scripts/knowledge_distill.py` |
 | **GraphRAG** | Microsoft GraphRAG — turns your documents into a queryable knowledge graph | **Installed by default** — add your content to `~/Obsidian-Vault/`, then run `cd ~/.hermes/graphrag && graphrag index --root .` |
 | **Cron Jobs** | Automated tasks: monitoring, notifications, data collection, daily briefs | Configured via `hermes cron` |
