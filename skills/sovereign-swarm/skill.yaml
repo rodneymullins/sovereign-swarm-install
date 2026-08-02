@@ -44,7 +44,7 @@ documentation: |
   ### Tier 2: Distill
   - Script: ~/.hermes/scripts/pre_process.py
   - Model: gemma4:31b-cloud (Level 2, faster, better grouping)
-  - Fallback: gpt-oss:20b-cloud → gemma4:12b (local) → original text
+  - Fallback: gemma4:31b-cloud → original text
   - Strips filler words, restructures into short active-voice sentences
   - One fact per sentence. No idioms. No filler.
   - Token savings: ~200 tokens → ~60 tokens per message
@@ -52,7 +52,7 @@ documentation: |
   ### Tier 3: Evaluator Gate
   - Script: ~/.hermes/scripts/pre_process.py
   - Model: gemma4:31b-cloud (same as distill)
-  - Fallback: gpt-oss:20b-cloud → gemma4:12b (local) → pass to heavy model
+  - Fallback: gemma4:31b-cloud → pass to heavy model
   - After distilling, asks: "Can you answer this confidently without tools, research, or live data?"
   - If YES: Returns answer directly. Heavy model NEVER called. Saves ~$0.02/query.
   - If NO: Passes through to Tier 4 as normal.
@@ -68,7 +68,7 @@ documentation: |
 
   ### Resilience Features
   - Health check: fast-fail (3s) if Ollama is down
-  - Fallback chains: cloud → local → tiny local → original text
+  - Fallback chains: gemma4:31b-cloud → original text
   - Circuit breaker: 3 strikes, 5-min cooldown, persists to disk
   - Logging: every decision to ~/.hermes/logs/pipeline.log
   - Metrics: view with `python3 ~/.hermes/scripts/pipeline_metrics.py`

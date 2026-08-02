@@ -35,14 +35,14 @@ All user input MUST pass through this pipeline before any heavy reasoning occurs
 ### Tier 2: Distill
 - **Script:** `~/.hermes/scripts/pre_process.py` (same script)
 - **Model:** gemma4:31b-cloud (Level 2 — faster, better grouping)
-- **Fallback chain:** gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b (local) → original text
+- **Fallback chain:** gemma4:31b-cloud → original text
 - **Job:** Strip filler words. Restructure into short active-voice sentences. One fact per sentence.
 - **Token savings:** ~200 tokens to ~60 tokens per message
 
 ### Tier 3: Evaluator Gate
 - **Script:** `~/.hermes/scripts/pre_process.py` (same script)
 - **Model:** gemma4:31b-cloud (same as distill)
-- **Fallback chain:** gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b (local) → pass to heavy model
+- **Fallback chain:** gemma4:31b-cloud → pass to heavy model
 - **Job:** After distilling, ask the cheap model: "Can you answer this confidently without tools, research, or live data?"
 - **When it answers YES:** Returns the answer directly. Heavy model NEVER called. Saves ~$0.02/query.
 - **When it answers NO:** Passes through to Tier 4 as normal.
@@ -55,7 +55,7 @@ All user input MUST pass through this pipeline before any heavy reasoning occurs
 
 ### Resilience Features
 - **Health Check:** Verifies Ollama is running before any API call. Fails fast (3s).
-- **Fallback Chain:** Each model call has a fallback chain to local models.
+- **Fallback Chain:** Each model call has a fallback chain. Distill: gemma4:31b-cloud → original text. Evaluator: gemma4:31b-cloud → pass to heavy model.
 - **Circuit Breaker:** After 3 consecutive API failures, stops trying for 5 minutes.
 - **Logging:** Every pipeline decision logged to `~/.hermes/logs/pipeline.log`.
 - **Metrics:** View with `python3 ~/.hermes/scripts/pipeline_metrics.py`.

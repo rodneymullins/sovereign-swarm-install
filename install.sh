@@ -101,11 +101,23 @@ ok "Git: $(git --version 2>&1)"
 if ! command -v ollama &>/dev/null; then
     info "Installing Ollama..."
     brew install ollama
+fi
+ok "Ollama: $(ollama --version 2>&1)"
+
+# ── Ensure Ollama server is running ──
+if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
     info "Starting Ollama server..."
     ollama serve &>/dev/null &
     sleep 3
+    # Verify it started
+    if curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+        ok "  Ollama server started"
+    else
+        warn "  Could not start Ollama server — run 'ollama serve' manually"
+    fi
+else
+    ok "  Ollama server already running"
 fi
-ok "Ollama: $(ollama --version 2>&1)"
 
 # ── Create directory structure ──
 info "Creating directory structure..."
@@ -195,23 +207,6 @@ done
 ok "Profiles created: legal, finance, systems, solar, stochastic, interpersonal, health, career, education, orchestrator"
 
 # ══════════════════════════════════════════════════════════════════════════════
-# STEP 4: Install Ollama Models
-# ══════════════════════════════════════════════════════════════════════════════
-info "Checking Ollama models..."
-
-LOCAL_MODELS=("gemma4:12b")
-for model in "${LOCAL_MODELS[@]}"; do
-    if ollama list 2>/dev/null | grep -q "$model"; then
-        ok "  $model already installed"
-    else
-        info "  Pulling $model (background)..."
-        ollama pull "$model" &
-    fi
-done
-wait 2>/dev/null || true
-ok "Local models installed"
-
-# ══════════════════════════════════════════════════════════════════════════════
 # STEP 4b: Create Obsidian Vault Directory
 # ══════════════════════════════════════════════════════════════════════════════
 info "Creating Obsidian Vault directory..."
@@ -246,14 +241,6 @@ chmod +x "${SCRIPTS_DIR}/knowledge_search.py" "${SCRIPTS_DIR}/knowledge_distill.
 
 # Download knowledge skill
 download_file "${RAW_BASE}/skills/knowledge-base-retrieval/SKILL.md" "${SKILLS_DIR}/knowledge-base-retrieval/SKILL.md"
-
-# Pull embedding model for knowledge base
-if ollama list 2>/dev/null | grep -q "nomic-embed-text"; then
-    ok "  nomic-embed-text already installed"
-else
-    info "  Pulling nomic-embed-text (embedding model)..."
-    ollama pull nomic-embed-text &
-fi
 
 # Create empty knowledge.db if it doesn't exist
 if [[ ! -f "${HERMES_HOME}/knowledge.db" ]]; then

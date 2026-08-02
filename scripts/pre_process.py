@@ -11,7 +11,7 @@ Three tiers:
 
 Resilience features (Aug 2, 2026):
 - Health check: fast-fail if Ollama is down
-- Fallback chain: cloud → local 12B → tiny local → original text
+- Fallback chain: gemma4:31b-cloud → original text
 - Circuit breaker: 3 strikes, 5-min cooldown
 - Logging: every decision with timestamps and latency
 - Metrics: evaluator hit rate, savings, latency, domain distribution
@@ -53,15 +53,11 @@ CACHE_MAXSIZE = 100             # LRU cache entries
 # ── Fallback Chains ──
 
 FALLBACK_CHAIN_DISTILL = [
-    "gemma4:31b-cloud",    # Level 2 cloud (faster, better quality)
-    "gpt-oss:20b-cloud",   # Level 1 cloud (cheaper fallback)
-    "gemma4:12b",          # Local 12B (7.6GB, always available)
+    "gemma4:31b-cloud",    # Primary distill model
 ]
 
 FALLBACK_CHAIN_EVALUATOR = [
-    "gemma4:31b-cloud",    # Level 2 cloud
-    "gpt-oss:20b-cloud",   # Level 1 cloud fallback
-    "gemma4:12b",          # Local fallback
+    "gemma4:31b-cloud",    # Primary evaluator model
 ]
 
 # ── Intent Gate Keywords ──

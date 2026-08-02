@@ -14,26 +14,6 @@ providers:
       - deepseek-v4-flash:cloud
       - deepseek-v4-pro:cloud
       - gemma4:31b-cloud
-      - gpt-oss:20b-cloud
-      - gpt-oss:120b-cloud
-      - gemma4:cloud
-      - minimax-m2.1:cloud
-      - gemini-3-flash-preview:cloud
-      - glm-4.7:cloud
-      - kimi-k2.5:cloud
-      - kimi-k2.6:cloud
-      - minimax-m2.5:cloud
-      - glm-5:cloud
-      - minimax-m2.7:cloud
-      - minimax-m3:cloud
-      - kimi-k2.7-code:cloud
-      - nemotron-3-super:cloud
-      - glm-5.1:cloud
-      - rnj-1:8b-cloud
-      - glm-5.2:cloud
-      - max:latest
-      - fast:latest
-      - offline:latest
     name: Ollama
 
 fallback_providers: []
