@@ -47,7 +47,15 @@ ok "Profile: ${USER_NAME} — ${USER_DESCRIPTION}"
 # ══════════════════════════════════════════════════════════════════════════════
 echo ""
 echo -e "${YELLOW}── Domain Configuration ──${NC}"
-echo "The pipeline classifies messages into domains using keyword matching."
+echo "Domains are categories the pipeline uses to understand what you're talking about."
+echo "Name them after your areas of work, interest, or expertise."
+echo ""
+echo "  Examples:"
+echo "    A doctor might use:  cardiology, radiology, pediatrics, practice_management"
+echo "    A gamer might use:   fps_games, rpgs, hardware_builds, streaming"
+echo "    A lawyer might use:  family_law, criminal_defense, contracts, appeals"
+echo "    A trader might use:  crypto, equities, options, macro_economics"
+echo ""
 echo "Default domains: legal, finance, systems, solar, stochastic, interpersonal"
 read -p "Customize domains? (y/N): " CUSTOM_DOMAINS
 
@@ -56,8 +64,9 @@ declare -A DOMAIN_KEYWORDS
 declare -A DOMAIN_DESCRIPTIONS
 
 if [[ "$CUSTOM_DOMAINS" =~ ^[Yy] ]]; then
+    echo ""
     echo "Enter your domain names, one per line. Empty line to finish."
-    echo "Example: medical, gaming, real_estate, fitness, research"
+    echo "Use short, descriptive names (snake_case if multi-word)."
     while true; do
         read -p "  Domain name (or blank to finish): " domain
         [[ -z "$domain" ]] && break
@@ -68,8 +77,11 @@ if [[ "$CUSTOM_DOMAINS" =~ ^[Yy] ]]; then
     for domain in "${DOMAINS[@]}"; do
         echo ""
         echo "  Domain: ${domain}"
+        echo "    Keywords are words that trigger this domain. When you use them,"
+        echo "    the pipeline knows what you're talking about."
         read -p "    Keywords (comma-separated, e.g. court, judge, filing): " keywords
         DOMAIN_KEYWORDS["$domain"]="$keywords"
+        echo "    Description appears in SOUL.md and helps the agent understand the domain."
         read -p "    Description (one line, e.g. 'Legal research, court filings, case law'): " desc
         DOMAIN_DESCRIPTIONS["$domain"]="$desc"
     done
