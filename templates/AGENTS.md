@@ -21,7 +21,6 @@
 - User also manages a solar system, MLX/Ollama infrastructure
 - User prefers direct, honest answers. No sugar-coating.
 - Legal citations should be state-specific (revised codes, civil rules, court rules)
-- The vault is at ~/Obsidian-Vault/
 - **DISTILL PIPELINE IS MANDATORY:** See `~/.hermes/SOUL.md` for the full four-tier pipeline. The `pre_process` hook enforces it automatically on every message. No manual invocation needed.
 
 **NEVER:**

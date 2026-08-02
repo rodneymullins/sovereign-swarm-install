@@ -40,7 +40,7 @@ chunking:
 
 input_storage:
   type: file
-  base_dir: "{{VAULT_PATH}}"
+  base_dir: "~/Obsidian-Vault"  # Change this to your vault path
 
 output_storage:
   type: file

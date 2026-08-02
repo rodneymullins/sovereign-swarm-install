@@ -207,19 +207,7 @@ done
 ok "Profiles created: legal, finance, systems, solar, stochastic, interpersonal, health, career, education, orchestrator"
 
 # ══════════════════════════════════════════════════════════════════════════════
-# STEP 4b: Create Obsidian Vault Directory
-# ══════════════════════════════════════════════════════════════════════════════
-info "Creating Obsidian Vault directory..."
-VAULT_PATH="${HOME}/Obsidian-Vault"
-if [[ ! -d "$VAULT_PATH" ]]; then
-    mkdir -p "$VAULT_PATH"
-    ok "  Vault directory created at $VAULT_PATH — add your own notes"
-else
-    ok "  Vault already exists at $VAULT_PATH"
-fi
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 4c: Install Knowledge Base
+# STEP 4b: Install Knowledge Base
 # ══════════════════════════════════════════════════════════════════════════════
 info "Installing Knowledge Base..."
 
@@ -298,9 +286,6 @@ if [[ ! -d "$GRAPH_DIR" ]]; then
 
     # Download settings.yaml template
     download_file "${RAW_BASE}/templates/graphrag_settings.yaml" "${GRAPH_DIR}/settings.yaml"
-
-    # Replace vault path placeholder
-    sed -i '' "s|{{VAULT_PATH}}|${VAULT_PATH}|g" "${GRAPH_DIR}/settings.yaml"
 
     # Download graphrag skill
     download_file "${RAW_BASE}/skills/graphrag-ollama-index/SKILL.md" "${SKILLS_DIR}/graphrag-ollama-index/SKILL.md"
@@ -418,7 +403,6 @@ echo -e "  ${GREEN}Pipeline:${NC}   ${SCRIPTS_DIR}/pre_process.py"
 echo -e "  ${GREEN}Metrics:${NC}    ${SCRIPTS_DIR}/pipeline_metrics.py"
 echo -e "  ${GREEN}Knowledge:${NC}  ${SCRIPTS_DIR}/knowledge_search.py"
 echo -e "  ${GREEN}GraphRAG:${NC}   ${GRAPH_DIR}"
-echo -e "  ${GREEN}Vault:${NC}      ${VAULT_PATH}"
 echo -e "  ${GREEN}Profiles:${NC}   $(ls ${PROFILES_DIR} | tr '\n' ' ')"
 echo -e "  ${GREEN}Logs:${NC}       ${LOGS_DIR}/pipeline.log"
 echo ""
