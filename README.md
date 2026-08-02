@@ -8,9 +8,29 @@ One-command install of the Hermes Agent Sovereign Swarm pipeline — a hardened 
 curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash
 ```
 
-Or with interactive config:
+At launch, you'll be asked:
+
+```
+How would you like to configure?
+
+  1) Default setup — quick install with standard domains
+     (legal, finance, systems, solar, stochastic, interpersonal,
+      health, career, education)
+
+  2) Custom setup — choose your domains, keywords, models, and more
+
+  Enter 1 or 2 [1]:
+```
+
+Pick **1** for a quick default install. Pick **2** for the full interactive config.
+
+### Flags (skip the prompt)
 
 ```bash
+# Default install (no prompt)
+curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash -s -- --default
+
+# Custom install (no prompt)
 curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash -s -- --configure
 ```
 

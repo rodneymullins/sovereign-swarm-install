@@ -15,11 +15,36 @@ fail()  { echo -e "${RED}[FAIL]${NC}  $1"; exit 1; }
 
 # ── Detect if --configure flag was passed ──
 RUN_CONFIGURE=false
+SKIP_PROMPT=false
 for arg in "$@"; do
     if [[ "$arg" == "--configure" || "$arg" == "-c" ]]; then
         RUN_CONFIGURE=true
+        SKIP_PROMPT=true
+    fi
+    if [[ "$arg" == "--default" || "$arg" == "-d" ]]; then
+        RUN_CONFIGURE=false
+        SKIP_PROMPT=true
     fi
 done
+
+# ── If no flag, ask at launch ──
+if ! $SKIP_PROMPT; then
+    echo ""
+    echo -e "${CYAN}How would you like to configure?${NC}"
+    echo ""
+    echo "  1) Default setup — quick install with standard domains"
+    echo "     (legal, finance, systems, solar, stochastic, interpersonal,"
+    echo "      health, career, education)"
+    echo ""
+    echo "  2) Custom setup — choose your domains, keywords, models, and more"
+    echo ""
+    read -p "  Enter 1 or 2 [1]: " choice
+    choice="${choice:-1}"
+    if [[ "$choice" == "2" ]]; then
+        RUN_CONFIGURE=true
+    fi
+    echo ""
+fi
 
 # ── Paths ──
 HERMES_HOME="${HOME}/.hermes"
