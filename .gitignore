@@ -20,3 +20,4 @@ build/
 .env
 *.key
 *secret*
+skills/knowledge-base-retrieval/references/twilio-sms-setup.md
