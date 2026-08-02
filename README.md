@@ -1,112 +1,134 @@
-# Sovereign Swarm Installer
+<div align="center">
+  <h1>🧠 Sovereign Swarm</h1>
+  <p><strong>Turn Hermes Agent into a self-healing, domain-aware reasoning engine</strong></p>
+  <p>
+    <a href="#-quick-install">Install</a> •
+    <a href="#-why-sovereign-swarm">Why</a> •
+    <a href="#-how-it-works">How It Works</a> •
+    <a href="#-pipeline-architecture">Architecture</a> •
+    <a href="#-configuration">Configure</a>
+  </p>
+  <p>
+    <img src="https://img.shields.io/badge/macOS-Apple_Silicon-brightgreen" alt="macOS">
+    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
+    <img src="https://img.shields.io/badge/hermes-v0.19.1+-purple" alt="Hermes">
+  </p>
+</div>
 
-One-command install of the Hermes Agent Sovereign Swarm pipeline — a hardened 4-tier input processing system with health checks, fallback chains, circuit breakers, logging, metrics, caching, and validation.
+---
 
-## Quick Install
+## 📦 Quick Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash
 ```
 
-At launch, you'll be asked:
+At launch, pick your path:
 
 ```
 How would you like to configure?
 
   1) Default setup — quick install with standard domains
-     (legal, finance, systems, solar, stochastic, interpersonal,
-      health, career, education)
-
   2) Custom setup — choose your domains, keywords, models, and more
 
   Enter 1 or 2 [1]:
 ```
 
-Pick **1** for a quick default install. Pick **2** for the full interactive config.
+**Option 1** — up and running in 2 minutes. **Option 2** — full control.
 
 ### Flags (skip the prompt)
 
 ```bash
-# Default install (no prompt)
-curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash -s -- --default
+# Quick default
+curl -fsSL ... | bash -s -- --default
 
-# Custom install (no prompt)
-curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash -s -- --configure
+# Full interactive config
+curl -fsSL ... | bash -s -- --configure
 ```
 
-## What It Installs
+---
 
-| Component | Description |
-|-----------|-------------|
-| **Hermes Agent** | v0.19.1+ from GitHub |
-| **4-Tier Pipeline** | Intent Gate → Distill → Evaluator → Heavy Reasoning |
-| **Resilience Layer** | Health check, fallback chains, circuit breaker, logging, metrics, caching, validation, hard timeout |
-| **Domain Profiles** | One per default domain — legal, finance, systems, solar, stochastic, interpersonal, health, career, education, plus orchestrator |
-| **Ollama Models** | gemma4:12b + qwen3:0.6b for local fallback |
+## 🤔 Why Sovereign Swarm?
 
-## What You Can Add
+Hermes Agent is powerful out of the box. But it has one problem: **every message costs the same as every other message.** A simple "what time is it?" burns the same tokens as drafting a legal motion. The heavy model reads your full conversation history just to figure out what domain you're talking about.
 
-The installer sets up the foundation. These optional components extend it:
+**Sovereign Swarm fixes that.** It adds a lightweight pre-processing layer that runs *before* the heavy model ever sees your message. This layer:
 
-| Component | What It Does | How to Add |
-|-----------|-------------|------------|
-| **Obsidian Vault** | Markdown knowledge base with 7,000+ indexed notes, entity profiles, case files, and reference materials | Clone or create a vault at `~/Obsidian-Vault/` |
-| **GraphRAG** | Microsoft GraphRAG indexing — turns your vault into a queryable knowledge graph with semantic search, entity resolution, and community detection | Run `graphrag-indexing` skill after vault is set up |
-| **Knowledge Base** | Hybrid search (semantic + FTS5) over distilled vault notes — 513 searchable chunks across all domains | Built-in via `knowledge_search.py` |
-| **Cron Jobs** | 30+ automated tasks: solar watchdog, email triage, Kalshi tracker, vault ingestion, daily briefs, swing detection | Configured via `hermes cron` |
+| Problem | Hermes Alone | With Sovereign Swarm |
+|---------|-------------|---------------------|
+| **Context bloat** | Heavy model reads 20K+ tokens of history just to classify your domain | Classification happens in a zero-cost keyword matcher before the model runs |
+| **Wasted tokens on filler** | "So like, I was thinking, you know, maybe we could..." goes straight to the expensive model | Filler is stripped by a cheap model first — the heavy model gets clean, structured input |
+| **Simple questions cost the same** | "What's the capital of France?" costs $0.02+ | Evaluator gate catches simple queries and answers them directly — heavy model never called |
+| **No failure recovery** | If Ollama hiccups, the message fails silently | Health check, fallback chains, and circuit breaker keep the pipeline running |
+| **No visibility** | No way to see what's happening inside | Every decision logged. Metrics on evaluator hit rate, latency, savings. |
+| **One-size-fits-all** | Same system prompt for every topic | Domain-tagged routing — legal gets legal treatment, health gets health treatment |
 
-## Pipeline Architecture
+**Bottom line:** Sovereign Swarm makes Hermes **faster, cheaper, and more reliable** without changing how you talk to it. You ramble. It cleans. You get better answers.
+
+---
+
+## 🏗️ How It Works
+
+Every message passes through 4 tiers before the heavy model sees it:
 
 ```
-User Message (6,000+ chars rambling)
-    │
-    ▼
-Health Check (3s fast-fail)
-    │
-    ▼
-Intent Gate → domain tag (word-boundary keywords, zero cost)
-    │
-    ▼
-Distill → gemma4:31b-cloud → 60%+ reduction, grouped by topic
-    │  Fallback: gpt-oss:20b-cloud → gemma4:12b → qwen3:0.6b → original
-    │
-    ▼
-Evaluator Gate → can cheap model answer? (saves ~$0.02/query)
-    │  Fallback: gpt-oss:20b-cloud → gemma4:12b → pass to heavy
-    │
-    ▼
-Heavy Model → deepseek-v4-flash:cloud gets clean, organized input
-    │
-    ▼
-Circuit Breaker (3 strikes, 5-min cooldown)
-Logging (every step)
-Metrics (view with pipeline_metrics.py)
-Caching (LRU, 100 entries)
-Validation (input/output)
-Hard Timeout (15s kill switch)
+You type: "So like, I was thinking about the F25 case and I feel like we need to file
+          a motion for contempt because the other side missed the last three weekends..."
+
+         ▼
+[Tier 1: Intent Gate]  ← Zero cost, zero latency
+  Scans for keywords → "legal" domain
+  (court, custody, motion, contempt, trial...)
+
+         ▼
+[Tier 2: Distill]  ← Cheap model (gemma4:31b-cloud)
+  Strips filler, restructures:
+  "File a contempt motion in the F25 case.
+   The other side missed three visitation weekends.
+   Decide between show-cause and straight contempt."
+
+         ▼
+[Tier 3: Evaluator Gate]  ← Same cheap model
+  "Can I answer this without tools or research?"
+  → NO (needs legal research) → passes to heavy model
+  → YES ("What's the capital of France?") → answers directly, saves $0.02
+
+         ▼
+[Tier 4: Heavy Reasoning]  ← deepseek-v4-flash:cloud
+  Gets clean, organized input. No filler. No history bloat.
+  Produces better answers, faster.
 ```
 
-## Configuration
+**Real result from a 6,232-character ramble:**
 
-Run the installer with `--configure` to set up your preferences:
+> *"File a contempt motion in the F25 case. The other side missed three visitation weekends. Decide between a show-cause motion and a straight contempt motion. Check if a fee waiver applies to post-decree motions. Verify the solar battery voltage; it may be low due to little sun. Confirm whether the new model on Frodo is still downloading or finished. Tell Julien the court has not set a visitation date yet."*
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash -s -- --configure
-```
+**61% reduction.** Every topic extracted. Every filler word removed. The heavy model gets clean, organized input instead of a wall of text.
 
-You'll be prompted for:
+---
 
-1. **Your profile** — name, description, use case
-2. **Your domains** — define your own or use defaults (legal, finance, systems, solar, stochastic, interpersonal, health, career, education)
-3. **Keywords** — what words trigger each domain
-4. **Models** — Ollama endpoint, default model, distill model, reasoning model
-5. **API keys** — Anthropic (optional, for vision)
+## 🛡️ Resilience Features
 
-### Customizing Domains
+| Feature | What It Does |
+|---------|-------------|
+| **Health Check** | Verifies Ollama is running before any API call. Fails fast (3s) instead of waiting 30s. |
+| **Fallback Chains** | If the cloud model fails, tries local models before giving up. Distill: gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b → qwen3:0.6b → original text. |
+| **Circuit Breaker** | After 3 consecutive API failures, stops trying for 5 minutes. Prevents cascading failures. State persists across restarts. |
+| **Logging** | Every pipeline decision logged with timestamps and latency. View at `~/.hermes/logs/pipeline.log`. |
+| **Metrics** | Tracks evaluator hit rate, distill success rate, latency (avg/P50/P95), domain distribution, circuit opens, cache hits. |
+| **Caching** | LRU cache (100 entries) for repeated queries. Same question twice? Second call is instant. |
+| **Input/Output Validation** | Rejects empty/binary/overlong input. Validates output has all required fields. Safe fallback on failure. |
+| **Hard Timeout** | 15-second kill switch prevents the script from hanging. Returns safe fallback if exceeded. |
 
-Domains are categories the pipeline uses to understand what you're talking about. Name them after your areas of work, interest, or expertise.
+---
 
-The configure script shows a **checkbox menu** of default domains. Toggle them on/off by number:
+## 🎯 Domain Customization
+
+The pipeline classifies every message into a domain. You define what matters to you.
+
+**Default domains:** legal, finance, systems, solar, stochastic, interpersonal, health, career, education
+
+**Or define your own.** The configure script shows a checkbox menu:
 
 ```
   [✓]  1) legal
@@ -122,89 +144,120 @@ The configure script shows a **checkbox menu** of default domains. Toggle them o
   Toggle number (or blank to finish):
 ```
 
-Then you can add custom domains. Each domain gets keywords and a description:
+Toggle on/off. Add custom domains. Each gets its own keywords, description, and profile.
 
-```
-  ── cardiology ──
-    Keywords are words that trigger this domain.
-    Keywords (comma-separated): heart, artery, stent, bypass, echo, cholesterol
-    Description (one line): Cardiology, cardiovascular health, heart disease treatment
-```
+**Examples of custom domains:**
 
-**How it works:** Every message is checked against ALL domains' keywords. The domain with the most keyword matches wins. If nothing matches, it falls to "general". You can have as many domains as you want — the check is zero-cost (no model calls, just string matching).
+| Person | Domains |
+|--------|---------|
+| **Doctor** | cardiology, radiology, pediatrics, practice_management |
+| **Gamer** | fps_games, rpgs, hardware_builds, streaming |
+| **Lawyer** | family_law, criminal_defense, contracts, appeals |
+| **Trader** | crypto, equities, options, macro_economics |
+| **Student** | math, physics, history, study_skills |
+| **Parent** | health, education, activities, budgeting |
 
-**Tips for good domains:**
-- Use short, descriptive names (snake_case if multi-word)
-- Pick 5-15 keywords per domain that you actually use in conversation
-- Don't overlap keywords between domains — if two domains share too many words, messages will bounce between them
-- "general" is automatic — no need to define it
+**How it works:** Every message is checked against ALL domains' keywords. The domain with the most keyword matches wins. If nothing matches, it falls to "general". Zero model calls, zero latency — just string matching.
 
-Each domain gets its own profile directory with the pre_process hook wired in.
+---
 
-### Manual Customization
-
-Edit these files after install to tweak your setup:
-
-| File | What to Change |
-|------|----------------|
-| `~/.hermes/scripts/pre_process.py` | `INTENT_KEYWORDS` dict — add/remove domains and keywords |
-| `~/.hermes/SOUL.md` | Domain Boundaries section |
-| `~/.hermes/AGENTS.md` | ASSUME section — your role and use case |
-| `~/.hermes/skills/sovereign-swarm/skill.yaml` | `specialists` list |
-| `~/.hermes/profiles/` | Add/remove profile directories |
-
-### Re-running Configuration
-
-```bash
-# Re-run the interactive config
-curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/scripts/configure.sh | bash
-```
-
-Or if you cloned the repo:
-
-```bash
-cd sovereign-swarm-install
-bash scripts/configure.sh
-```
-
-## Requirements
-
-- macOS (Apple Silicon)
-- Homebrew
-- 8GB+ RAM (16GB+ recommended)
-- 10GB+ free disk space
-- Ollama Max subscription (for cloud models) or local models
-
-## File Structure
-
-```
-~/.hermes/
-├── config.yaml          # Main configuration
-├── SOUL.md              # Core identity & pipeline docs
-├── AGENTS.md            # Agent instructions
-├── scripts/
-│   ├── pre_process.py   # Combined 4-tier pipeline
-│   └── pipeline_metrics.py  # Metrics reporter
-├── skills/
-│   └── sovereign-swarm/
-│       └── skill.yaml   # Pre_process hook
-├── profiles/            # 11 domain profiles
-├── logs/
-│   └── pipeline.log     # Pipeline decisions
-├── state/
-│   ├── pipeline_metrics.json  # Usage stats
-│   └── pipeline_circuit.json  # Circuit breaker state
-└── cron/                # Scheduled jobs
-```
-
-## Viewing Metrics
+## 📊 Viewing Metrics
 
 ```bash
 python3 ~/.hermes/scripts/pipeline_metrics.py
 ```
 
-Shows: domain distribution, distill success rate, evaluator hit rate, estimated savings, latency (avg/P50/P95), circuit opens, cache hits.
+```
+==================================================
+  Pipeline Metrics Report
+==================================================
+  Total queries:     47
 
-## License
+  ── By Domain ──
+    legal           22 (46.8%) ██████████░
+    systems         12 (25.5%) █████░░░░░░
+    solar            6 (12.8%) ██░░░░░░░░░
+    general          7 (14.9%) ███░░░░░░░░
+
+  ── Distill ──
+    Success rate:    45/47 (95.7%)
+    Fallback used:   2 times
+
+  ── Evaluator Gate ──
+    Hit rate:        8/32 (25.0%)
+    Est. savings:    $0.16
+
+  ── Latency ──
+    Average:         1526 ms
+    Median (P50):    1703 ms
+    P95:             1833 ms
+
+  ── Health ──
+    Circuit opens:   0
+    Health failures: 1
+    Cache hits:      3
+```
+
+---
+
+## 📁 What Gets Installed
+
+```
+~/.hermes/
+├── config.yaml              # Main configuration
+├── SOUL.md                  # Core identity & pipeline docs
+├── AGENTS.md                # Agent instructions
+├── scripts/
+│   ├── pre_process.py       # Combined 4-tier pipeline
+│   ├── pipeline_metrics.py  # Metrics reporter
+│   ├── configure.sh         # Interactive config
+│   └── generate_config.py   # Template-based file generator
+├── skills/
+│   └── sovereign-swarm/
+│       └── skill.yaml       # Pre_process hook (fires on every message)
+├── profiles/                # One per domain
+│   ├── legal/
+│   ├── finance/
+│   ├── systems/
+│   ├── ...
+│   └── orchestrator/
+├── logs/
+│   └── pipeline.log         # Every decision, timestamped
+├── state/
+│   ├── pipeline_metrics.json
+│   └── pipeline_circuit.json
+└── cron/                    # Scheduled jobs
+```
+
+---
+
+## 🔧 Requirements
+
+- **macOS** (Apple Silicon)
+- **Homebrew**
+- **8GB+ RAM** (16GB+ recommended)
+- **10GB+ free disk space**
+- **Ollama** (with Ollama Max subscription for cloud models, or local models)
+
+---
+
+## 🧩 Optional Add-Ons
+
+| Component | What It Does | How to Add |
+|-----------|-------------|------------|
+| **Obsidian Vault** | Markdown knowledge base — 7,000+ indexed notes, entity profiles, case files | Clone or create at `~/Obsidian-Vault/` |
+| **GraphRAG** | Microsoft GraphRAG — turns your vault into a queryable knowledge graph with semantic search | Run `graphrag-indexing` skill |
+| **Knowledge Base** | Hybrid search (semantic + FTS5) over distilled notes — 500+ searchable chunks | Built-in via `knowledge_search.py` |
+| **Cron Jobs** | 30+ automated tasks: solar watchdog, email triage, market tracking, daily briefs | Configured via `hermes cron` |
+
+---
+
+## 📝 License
 
 MIT
+
+---
+
+<div align="center">
+  <p>Built by <a href="https://github.com/rodneymullins">rodneymullins</a> · Sovereign Swarm</p>
+</div>
