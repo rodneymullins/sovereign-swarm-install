@@ -2,7 +2,7 @@
 """
 GraphRAG query wrapper for Hermes.
 Calls graphrag query from the venv and returns structured results.
-Usage: python3 graphrag_query.py "Who is John Treleven?" [--mode local|global|drift|basic]
+Usage: python3 graphrag_query.py "Who is the opposing counsel?" [--mode local|global|drift|basic]
 """
 import sys, subprocess, json, os
 from pathlib import Path

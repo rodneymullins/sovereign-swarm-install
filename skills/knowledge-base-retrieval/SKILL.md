@@ -166,20 +166,6 @@ emb_np = np.array(emb.astype(mx.float32))  # explicit float32 conversion
 
 The error message is: `Item size 2 for PEP 3118 buffer format string B does not match the dtype B item size 1`. This means MLX's bfloat16 (2 bytes) doesn't match numpy's default float64 (8 bytes). Always cast to float32 before converting to numpy.
 
-## FTS5 Query Sanitization
-
-FTS5 treats `?` as a wildcard character. Queries containing question marks will fail with:
-```
-fts5: syntax error near "?"
-```
-
-**Fix:** Strip trailing punctuation and replace `?` with space before passing to FTS5:
-
-```python
-sanitized = re.sub(r'[?.,!;:]+$', '', query)
-sanitized = sanitized.replace('?', ' ')
-```
-
 ## FTS5 Query Sanitization (Critical)
 
 FTS5 treats `?` as a wildcard character. Queries containing question marks will fail with:
@@ -206,20 +192,6 @@ for w in sanitized.split():
 fts_query = ' '.join(fts_parts)
 ```
 
-## MLX Array Storage (Critical)
-
-MLX uses bfloat16 internally. When storing embeddings in SQLite, you MUST convert to float32 first:
-
-```python
-# WRONG — causes 'Item size 2 for PEP 3118 buffer format string B does not match'
-emb_np = np.array(emb)  # tries to use MLX bfloat16 buffer directly
-
-# RIGHT
-emb_np = np.array(emb.astype(mx.float32))  # explicit float32 conversion
-```
-
-The error message is: `Item size 2 for PEP 3118 buffer format string B does not match the dtype B item size 1`. This means MLX's bfloat16 (2 bytes) doesn't match numpy's default float64 (8 bytes). Always cast to float32 before converting to numpy.
-
 ## Pitfalls
 - **Qwen3 model loads on every query** — the search script loads Qwen3-Embedding-0.6B for each vector search. **FIXED:** The search script now uses a singleton pattern (`_get_mlx_model()`) that loads the model once and caches it in a global variable. First call takes ~4s (model load), subsequent calls take ~0s. If the script is run in a subprocess (cron job), the cache is lost — each cron tick reloads the model. For production, run the search as a persistent server.
 - **MLX model segfaults in threaded contexts** — Importing `knowledge_search` (which loads Qwen3-Embedding-0.6B via MLX) from a `ThreadPoolExecutor` worker causes `Segmentation fault: 11`. MLX's Metal backend is not fork/thread-safe. **Fix:** Use direct SQLite FTS5 queries (no MLX) when searching from threaded code. The FTS5-only approach is fast, thread-safe, and sufficient for keyword/domain searches. Reserve MLX vector search for single-threaded contexts. See `pipeline_knowledge_synthesis.py` for the FTS5-only `_search_kb()` pattern.
@@ -235,15 +207,15 @@ The error message is: `Item size 2 for PEP 3118 buffer format string B does not 
 
 ## GraphRAG / Knowledge Graph Alternative
 
-**Validated July 20, 2026:** Microsoft GraphRAG was installed and tested on a 50-document subset of the F25 custody case. Results: 545 entities, 1,380 relationships extracted from 50 documents using gemma4:31b-cloud + nomic-embed-text via Ollama.
+**Validated July 20, 2026:** Microsoft GraphRAG was installed and tested on a 50-document subset of a custody case. Results: 545 entities, 1,380 relationships extracted from 50 documents using gemma4:31b-cloud + nomic-embed-text via Ollama.
 
 ### When to Use GraphRAG Instead of Vector Search
 
 | Query Type | Vector Search (Current) | Knowledge Graph (GraphRAG) |
 |-----------|------------------------|---------------------------|
 | "Find documents about GAL reports" | ✅ Good | ✅ Good |
-| "What connects Treleven to van der Zee?" | ❌ Misses relationship | ✅ Returns: professional relationship, undisclosed conflict |
-| "What evidence supports my custody case?" | ❌ Returns similar chunks | ✅ Traverses: Rod → filed → motions → references → evidence |
+| "What connects opposing counsel to the GAL?" | ❌ Misses relationship | ✅ Returns: professional relationship, undisclosed conflict |
+| "What evidence supports my custody case?" | ❌ Returns similar chunks | ✅ Traverses: petitioner → filed → motions → references → evidence |
 | "Show me the chain of events" | ❌ Flat results | ✅ Traverses entity→relationship→entity paths |
 
 ### Setup
@@ -285,7 +257,7 @@ graphrag query -m local "What evidence supports the custody case?"
 - **Without community reports + embeddings, only raw parquet queries work** — you can query entities.parquet and relationships.parquet directly with pandas, but the built-in `graphrag query -m local` and `graphrag query -m global` commands will fail.
 - **Ollama Pro usage** — 1,500+ requests for 50 documents at ~25% allocation on the $20 plan. Full 13K index would be significant
 - **Concurrent requests matter** — GraphRAG fires parallel LLM calls during entity extraction. On Ollama Pro ($20/mo, 2 concurrent), set `concurrent_requests: 1` in settings.yaml. On Ollama Max ($100/mo, 10 concurrent), set `concurrent_requests: 5` for faster indexing without hitting 429 rate limits.
-- **The Ollama port of Unlimited-OCR runs in evaluation mode** — bounding boxes + "Ground Truth" analysis instead of text extraction. Proper inference requires CUDA/NVIDIA GPU (Gandalf)
+- **The Ollama port of Unlimited-OCR runs in evaluation mode** — bounding boxes + "Ground Truth" analysis instead of text extraction. Proper inference requires CUDA/NVIDIA GPU.
 
 ### Migration Path
 
@@ -332,7 +304,6 @@ When presenting search results to the user:
 - Source: vault (kanban/solar/telegram not yet indexed)
 
 ## Support Files
-- `references/twilio-sms-setup.md` — Twilio SMS configuration
 - `references/implementation-details.md` — Implementation details and architecture decisions
 - `references/embedding-model-experiments-july-18-2026.md` — Full history of embedding model experiments
 - `references/graphrag-50-doc-test-july-20-2026.md` — GraphRAG 50-document test results
