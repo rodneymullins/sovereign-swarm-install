@@ -15,6 +15,8 @@
   </p>
 </div>
 
+> **Talk to me like a chatbot. I'll clean it up for you.**
+
 ---
 
 ## 📦 Quick Install
@@ -64,6 +66,8 @@ Hermes Agent is powerful out of the box. But it has one problem: **every message
 | **One-size-fits-all** | Same system prompt for every topic | Domain-tagged routing — legal gets legal treatment, health gets health treatment |
 
 **Bottom line:** Sovereign Swarm makes Hermes **faster, cheaper, and more reliable** without changing how you talk to it. You ramble. It cleans. You get better answers.
+
+> **Talk to me like a chatbot. I'll clean it up for you.**
 
 ---
 
