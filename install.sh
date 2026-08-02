@@ -207,6 +207,127 @@ done
 ok "Profiles created: legal, finance, systems, solar, stochastic, interpersonal, health, career, education, orchestrator"
 
 # ══════════════════════════════════════════════════════════════════════════════
+# STEP 4b: Install Knowledge Base
+# ══════════════════════════════════════════════════════════════════════════════
+info "Installing Knowledge Base..."
+
+# Download knowledge scripts
+download_file "${RAW_BASE}/scripts/knowledge_search.py" "${SCRIPTS_DIR}/knowledge_search.py"
+download_file "${RAW_BASE}/scripts/knowledge_distill.py" "${SCRIPTS_DIR}/knowledge_distill.py"
+download_file "${RAW_BASE}/scripts/knowledge_embed_qwen.py" "${SCRIPTS_DIR}/knowledge_embed_qwen.py"
+download_file "${RAW_BASE}/scripts/index_additional_sources.py" "${SCRIPTS_DIR}/index_additional_sources.py"
+download_file "${RAW_BASE}/scripts/graphrag_query.py" "${SCRIPTS_DIR}/graphrag_query.py"
+chmod +x "${SCRIPTS_DIR}/knowledge_search.py" "${SCRIPTS_DIR}/knowledge_distill.py" "${SCRIPTS_DIR}/knowledge_embed_qwen.py"
+
+# Download knowledge skill
+download_file "${RAW_BASE}/skills/knowledge-base-retrieval/SKILL.md" "${SKILLS_DIR}/knowledge-base-retrieval/SKILL.md"
+
+# Create empty knowledge.db if it doesn't exist
+if [[ ! -f "${HERMES_HOME}/knowledge.db" ]]; then
+    python3 -c "
+import sqlite3
+conn = sqlite3.connect('${HERMES_HOME}/knowledge.db')
+conn.executescript('''
+    CREATE TABLE IF NOT EXISTS knowledge_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        source TEXT,
+        domain TEXT DEFAULT 'general',
+        full_text TEXT,
+        tags TEXT,
+        file_hash TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS knowledge_chunks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_id INTEGER REFERENCES knowledge_documents(id),
+        chunk_index INTEGER,
+        contextual_text TEXT NOT NULL,
+        embedding BLOB,
+        question TEXT,
+        summary TEXT,
+        resolution TEXT,
+        code_refs TEXT,
+        domain TEXT DEFAULT 'general',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
+        contextual_text, question, summary, resolution,
+        content='knowledge_chunks', content_rowid='id'
+    );
+    CREATE TABLE IF NOT EXISTS knowledge_sync (
+        file_path TEXT PRIMARY KEY,
+        file_hash TEXT NOT NULL,
+        last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+')
+conn.close()
+" 2>/dev/null && ok "  knowledge.db created" || warn "  Could not create knowledge.db"
+fi
+
+ok "Knowledge Base installed"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 4c: Install GraphRAG
+# ══════════════════════════════════════════════════════════════════════════════
+info "Installing GraphRAG..."
+
+GRAPH_DIR="${HERMES_HOME}/graphrag"
+if [[ ! -d "$GRAPH_DIR" ]]; then
+    mkdir -p "$GRAPH_DIR/input" "$GRAPH_DIR/output" "$GRAPH_DIR/cache" "$GRAPH_DIR/logs"
+    mkdir -p "$GRAPH_DIR/prompts"
+
+    # Create GraphRAG venv
+    python3 -m venv "${HERMES_HOME}/venvs/graphrag"
+    source "${HERMES_HOME}/venvs/graphrag/bin/activate"
+    pip install -q graphrag 2>/dev/null
+    deactivate
+
+    # Download settings.yaml template
+    download_file "${RAW_BASE}/templates/graphrag_settings.yaml" "${GRAPH_DIR}/settings.yaml"
+
+    # Download graphrag skill
+    download_file "${RAW_BASE}/skills/graphrag-ollama-index/SKILL.md" "${SKILLS_DIR}/graphrag-ollama-index/SKILL.md"
+
+    # Apply litellm patches for gemma4 JSON code-block wrapping
+    GRAPHRAG_LITELLM=$(find "${HERMES_HOME}/venvs/graphrag" -path "*/graphrag_llm/completion/lite_llm_completion.py" 2>/dev/null | head -1)
+    GRAPHRAG_STRUCTURE=$(find "${HERMES_HOME}/venvs/graphrag" -path "*/graphrag_llm/utils/structure_response.py" 2>/dev/null | head -1)
+
+    if [[ -n "$GRAPHRAG_LITELLM" ]]; then
+        sed -i '' 's/litellm.enable_json_schema_validation = True/litellm.enable_json_schema_validation = False/' "$GRAPHRAG_LITELLM"
+        ok "  Patched litellm JSON validation"
+    fi
+
+    if [[ -n "$GRAPHRAG_STRUCTURE" ]]; then
+        if ! grep -q "^import re" "$GRAPHRAG_STRUCTURE"; then
+            sed -i '' '1s/^/import re\n/' "$GRAPHRAG_STRUCTURE"
+        fi
+        python3 -c "
+import re
+with open('$GRAPHRAG_STRUCTURE', 'r') as f:
+    content = f.read()
+old = 'parsed_dict: dict[str, Any] = json.loads(response)'
+new = '''    cleaned = response.strip()
+    if cleaned.startswith(\"```\"):
+        cleaned = re.sub(r\"^```(?:json)?\\\\s*\", \"\", cleaned)
+        cleaned = re.sub(r\"\\\\s*```$\", \"\", cleaned)
+        cleaned = cleaned.strip()
+    parsed_dict: dict[str, Any] = json.loads(cleaned)'''
+content = content.replace(old, new)
+with open('$GRAPHRAG_STRUCTURE', 'w') as f:
+    f.write(content)
+" 2>/dev/null
+        ok "  Patched structure_response for code-block stripping"
+    fi
+
+    ok "GraphRAG installed"
+else
+    ok "  GraphRAG already exists at $GRAPH_DIR"
+    download_file "${RAW_BASE}/skills/graphrag-ollama-index/SKILL.md" "${SKILLS_DIR}/graphrag-ollama-index/SKILL.md"
+fi
+
+# ══════════════════════════════════════════════════════════════════════════════
 # STEP 5: Run Configuration (if --configure flag)
 # ══════════════════════════════════════════════════════════════════════════════
 if $RUN_CONFIGURE; then
@@ -243,7 +364,13 @@ for f in "${HERMES_HOME}/config.yaml" \
          "${HERMES_HOME}/AGENTS.md" \
          "${SCRIPTS_DIR}/pre_process.py" \
          "${SCRIPTS_DIR}/pipeline_metrics.py" \
-         "${SKILLS_DIR}/sovereign-swarm/skill.yaml"; do
+         "${SCRIPTS_DIR}/knowledge_search.py" \
+         "${SCRIPTS_DIR}/knowledge_distill.py" \
+         "${SCRIPTS_DIR}/knowledge_embed_qwen.py" \
+         "${SCRIPTS_DIR}/graphrag_query.py" \
+         "${SKILLS_DIR}/sovereign-swarm/skill.yaml" \
+         "${SKILLS_DIR}/knowledge-base-retrieval/SKILL.md" \
+         "${SKILLS_DIR}/graphrag-ollama-index/SKILL.md"; do
     if [[ -f "$f" ]]; then
         ok "  $(basename "$f")"
     else
@@ -270,6 +397,8 @@ echo ""
 echo -e "  ${GREEN}Hermes:${NC}     $(hermes --version 2>&1)"
 echo -e "  ${GREEN}Pipeline:${NC}   ${SCRIPTS_DIR}/pre_process.py"
 echo -e "  ${GREEN}Metrics:${NC}    ${SCRIPTS_DIR}/pipeline_metrics.py"
+echo -e "  ${GREEN}Knowledge:${NC}  ${SCRIPTS_DIR}/knowledge_search.py"
+echo -e "  ${GREEN}GraphRAG:${NC}   ${GRAPH_DIR}"
 echo -e "  ${GREEN}Profiles:${NC}   $(ls ${PROFILES_DIR} | tr '\n' ' ')"
 echo -e "  ${GREEN}Logs:${NC}       ${LOGS_DIR}/pipeline.log"
 echo ""
