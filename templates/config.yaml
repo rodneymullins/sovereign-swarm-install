@@ -1,0 +1,122 @@
+# ── Hermes Agent Configuration — Sovereign Swarm ──
+# Default config. Run configure.sh to personalize.
+
+model:
+  base_url: ''
+  default: deepseek-v4-flash:cloud
+  provider: ollama-launch
+
+providers:
+  ollama-launch:
+    api: http://127.0.0.1:11434/v1
+    default_model: deepseek-v4-flash:cloud
+    models:
+      - deepseek-v4-flash:cloud
+      - deepseek-v4-pro:cloud
+      - gemma4:31b-cloud
+      - gpt-oss:20b-cloud
+      - gpt-oss:120b-cloud
+      - gemma4:cloud
+      - minimax-m2.1:cloud
+      - gemini-3-flash-preview:cloud
+      - glm-4.7:cloud
+      - kimi-k2.5:cloud
+      - kimi-k2.6:cloud
+      - minimax-m2.5:cloud
+      - glm-5:cloud
+      - minimax-m2.7:cloud
+      - minimax-m3:cloud
+      - kimi-k2.7-code:cloud
+      - nemotron-3-super:cloud
+      - glm-5.1:cloud
+      - rnj-1:8b-cloud
+      - glm-5.2:cloud
+      - max:latest
+      - fast:latest
+      - offline:latest
+    name: Ollama
+
+fallback_providers: []
+
+toolsets:
+  - hermes-cli
+  - web
+
+max_live_sessions: 16
+
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  service_tier: ''
+  tool_use_enforcement: auto
+  task_completion_guidance: true
+  parallel_tool_call_guidance: true
+  environment_probe: true
+  environment_hint: ''
+  coding_context: auto
+  verify_on_stop: false
+  gateway_timeout_warning: 900
+  clarify_timeout: 600
+  gateway_notify_interval: 180
+  gateway_auto_continue_freshness: 3600
+  image_input_mode: auto
+  disabled_toolsets: []
+  personalities: '{"legal-drafter": "You are a legal drafting assistant for a pro se litigant. Use IRAC format (Issue, Rule, Analysis, Conclusion) for all analysis. Cite relevant state law: revised codes, civil rules, supreme court rules, and local court rules. Write for a family court judge. Be precise, cite specific statutes and rules, and flag evidentiary issues (hearsay, relevance, evidentiary rules, foundation) proactively.", "cross-exam": "You are a cross-examination strategist for a pro se litigant in a custody trial. Focus on impeachment, internal contradiction, and foundational attacks. Flag hearsay, relevance, evidentiary rules, and lack of foundation proactively. Structure questions as short, leading, closed-ended. One fact per question. Never ask a question you don''t already know the answer to. Identify impeachment targets from contradictory evidence.", "concise": "One sentence answers. No formatting. No explanations unless asked. State the fact or answer directly and stop."}'
+
+terminal:
+  backend: local
+  modal_mode: auto
+  cwd: .
+  timeout: 180
+  daemon_term_grace_seconds: 2
+  env_passthrough: []
+  home_mode: auto
+  shell_init_files: []
+
+web:
+  backend: ddgs
+  search_backend: ddgs
+  extract_backend: ddgs
+
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+
+auxiliary:
+  vision:
+    provider: ollama-launch
+    model: minicpm-v4.6:1b
+
+display:
+  tool_progress: all
+
+memory:
+  memory_char_limit: 3000
+
+delegation:
+  model: gemma4:31b-cloud
+  provider: ollama-launch
+  child_timeout_seconds: 300
+  max_concurrent_children: 8
+  max_spawn_depth: 1
+
+kanban:
+  dispatch_in_gateway: true
+  dispatch_interval_seconds: 60
+  orchestrator_profile: orchestrator
+  auto_decompose: true
+  auto_decompose_per_tick: 3
+
+plugins:
+  enabled: []
+
+tts:
+  provider: edge
+  voice: en-US-JennyNeural
+  speed: 1.0
+
+vision_provider: anthropic
+vision_model: claude-sonnet-4-20250514
