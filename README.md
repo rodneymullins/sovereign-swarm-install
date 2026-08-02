@@ -237,7 +237,7 @@ python3 ~/.hermes/scripts/pipeline_metrics.py
 - **Homebrew**
 - **8GB+ RAM** (16GB+ recommended)
 - **10GB+ free disk space**
-- **Ollama** (with Ollama Max subscription for cloud models)
+- **Ollama** (with Ollama Pro subscription for cloud models)
 
 ---
 

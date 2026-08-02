@@ -80,7 +80,7 @@ delegation:
   model: gemma4:31b-cloud
   provider: ollama-launch
   child_timeout_seconds: 300
-  max_concurrent_children: 8
+  max_concurrent_children: 2
   max_spawn_depth: 1
 
 kanban:
