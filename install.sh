@@ -212,16 +212,8 @@ ok "Profiles created: legal, finance, systems, solar, stochastic, interpersonal,
 info "Creating Obsidian Vault directory..."
 VAULT_PATH="${HOME}/Obsidian-Vault"
 if [[ ! -d "$VAULT_PATH" ]]; then
-    mkdir -p "$VAULT_PATH/00-Inbox/raw"
-    mkdir -p "$VAULT_PATH/00-Meta"
-    mkdir -p "$VAULT_PATH/01-Cases"
-    mkdir -p "$VAULT_PATH/02-Reference"
-    mkdir -p "$VAULT_PATH/03-Entities"
-    mkdir -p "$VAULT_PATH/04-Cognitive"
-    mkdir -p "$VAULT_PATH/08-Tools/References"
-    mkdir -p "$VAULT_PATH/99-Archive"
-    echo "# Obsidian Vault" > "$VAULT_PATH/INDEX.md"
-    ok "  Vault directory created at $VAULT_PATH"
+    mkdir -p "$VAULT_PATH"
+    ok "  Vault directory created at $VAULT_PATH — add your own notes"
 else
     ok "  Vault already exists at $VAULT_PATH"
 fi
