@@ -55,6 +55,8 @@ echo "    A doctor might use:  cardiology, radiology, pediatrics, practice_manag
 echo "    A gamer might use:   fps_games, rpgs, hardware_builds, streaming"
 echo "    A lawyer might use:  family_law, criminal_defense, contracts, appeals"
 echo "    A trader might use:  crypto, equities, options, macro_economics"
+echo "    A student might use:  math, physics, history, study_skills"
+echo "    A parent might use:  health, education, activities, budgeting"
 echo ""
 
 # ── Checkbox menu function ──
@@ -111,6 +113,9 @@ DEFAULT_DOMAIN_POOL=(
     "solar"
     "stochastic"
     "interpersonal"
+    "health"
+    "career"
+    "education"
 )
 
 echo "Default domains available:"
@@ -155,6 +160,12 @@ DOMAIN_KEYWORDS["stochastic"]="casino, slot, vlt, gambling, probability, odds, k
 DOMAIN_DESCRIPTIONS["stochastic"]="Gambling, probability, expected value, casino strategy"
 DOMAIN_KEYWORDS["interpersonal"]="psychology, relationship, family, communication, attachment, therapy, counseling, emotion, borderline, narcissist, alienation"
 DOMAIN_DESCRIPTIONS["interpersonal"]="Psychology, relationships, communication, family dynamics"
+DOMAIN_KEYWORDS["health"]="symptom, medication, diagnosis, doctor, pain, sleep, diet, exercise, supplement, peptide, treatment, prescription, side effect, therapy, recovery"
+DOMAIN_DESCRIPTIONS["health"]="Health, medical conditions, treatments, medications, fitness, nutrition"
+DOMAIN_KEYWORDS["career"]="job, client, project, contract, invoice, interview, resume, salary, promotion, freelance, business, startup, revenue, profit, networking"
+DOMAIN_DESCRIPTIONS["career"]="Career, work, business, freelancing, professional development"
+DOMAIN_KEYWORDS["education"]="course, lesson, curriculum, study, learn, teach, tutor, student, class, training, certification, degree, skill, practice, homework"
+DOMAIN_DESCRIPTIONS["education"]="Education, learning, teaching, courses, skill development"
 
 echo ""
 echo -e "${YELLOW}── Configure Each Domain ──${NC}"

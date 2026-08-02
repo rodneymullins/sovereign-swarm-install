@@ -66,7 +66,7 @@ curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-insta
 You'll be prompted for:
 
 1. **Your profile** — name, description, use case
-2. **Your domains** — define your own or use defaults (legal, finance, systems, solar, stochastic, interpersonal)
+2. **Your domains** — define your own or use defaults (legal, finance, systems, solar, stochastic, interpersonal, health, career, education)
 3. **Keywords** — what words trigger each domain
 4. **Models** — Ollama endpoint, default model, distill model, reasoning model
 5. **API keys** — Anthropic (optional, for vision)
@@ -84,6 +84,9 @@ The configure script shows a **checkbox menu** of default domains. Toggle them o
   [ ]  4) solar
   [✓]  5) stochastic
   [✓]  6) interpersonal
+  [✓]  7) health
+  [✓]  8) career
+  [✓]  9) education
 
   Toggle number (or blank to finish):
 ```
