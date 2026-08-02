@@ -1,0 +1,82 @@
+name: sovereign-swarm
+description: |
+  Sovereign Swarm integration - routes all queries through the Intent Gate
+  for domain-specific specialist reasoning. Makes the Swarm the brain of Hermes.
+
+version: 2.2.0
+author: Sovereign Swarm
+icon: 🧠
+
+hooks:
+  pre_process:
+    command: python3 ~/.hermes/scripts/pre_process.py
+    input: query
+    output: json
+
+config:
+  intent_gate_model: {{DISTILL_MODEL}}
+  distill_model: {{DISTILL_MODEL}}
+  reasoning_model: {{REASONING_MODEL}}
+
+specialists:
+{{SPECIALISTS}}
+
+documentation: |
+  ## Sovereign Swarm Skill v2.2
+
+  Four-tier pipeline that processes EVERY query automatically.
+  Resilience features: health check, fallback chains, circuit breaker,
+  logging, metrics, caching, validation, hard timeout.
+
+  ### Tier 1: Intent Gate (Automatic Pre-Hook)
+  - Script: ~/.hermes/scripts/pre_process.py
+  - Model: None — keyword-based classification with word-boundary matching
+  - Reads: ONLY the current message — NO conversation history
+  - Output: Domain tag ({{DOMAIN_LIST}})
+  - Time: ~0 seconds (no model call)
+
+  ### Tier 2: Distill
+  - Script: ~/.hermes/scripts/pre_process.py
+  - Model: {{DISTILL_MODEL}}
+  - Fallback: {{DISTILL_MODEL}} → gpt-oss:20b-cloud → gemma4:12b (local) → qwen3:0.6b (tiny local) → original text
+  - Strips filler words, restructures into short active-voice sentences
+  - One fact per sentence. No idioms. No filler.
+  - Token savings: ~200 tokens → ~60 tokens per message
+
+  ### Tier 3: Evaluator Gate
+  - Script: ~/.hermes/scripts/pre_process.py
+  - Model: {{DISTILL_MODEL}} (same as distill)
+  - Fallback: {{DISTILL_MODEL}} → gpt-oss:20b-cloud → gemma4:12b (local) → pass to heavy model
+  - After distilling, asks: "Can you answer this confidently without tools, research, or live data?"
+  - If YES: Returns answer directly. Heavy model NEVER called. Saves ~$0.02/query.
+  - If NO: Passes through to Tier 4 as normal.
+  - Skipped for FULL intensity queries (research, analyze, draft, motion, brief)
+  - Only answers: simple facts, definitions, common knowledge, simple math
+  - Declines: legal research, live data, system-specific questions, tool-dependent queries
+
+  ### Tier 4: Heavy Reasoning
+  - Model: {{REASONING_MODEL}}
+  - Receives: clean, classified input (~60 tokens)
+  - Never sees: original verbose input or full conversation history
+  - Token savings: 99.7% reduction (20,200 → 60 tokens)
+
+  ### Resilience Features
+  - Health check: fast-fail (3s) if Ollama is down
+  - Fallback chains: cloud → local → tiny local → original text
+  - Circuit breaker: 3 strikes, 5-min cooldown, persists to disk
+  - Logging: every decision to ~/.hermes/logs/pipeline.log
+  - Metrics: view with `python3 ~/.hermes/scripts/pipeline_metrics.py`
+  - Caching: LRU cache (100 entries) for repeated queries
+  - Input/output validation with safe fallbacks
+  - Hard timeout: 15-second kill switch
+  - Word-boundary keyword matching prevents false positives
+
+  ### How it works
+  1. User sends message
+  2. Pre-process hook fires automatically — health check runs
+  3. Intent Gate classifies domain via word-boundary keyword matching
+  4. Distill strips filler from input (with fallback chain)
+  5. Evaluator decides if it can answer (with fallback chain)
+  6. If evaluator answers: response returned directly
+  7. If evaluator passes: heavy model receives clean, classified input
+  8. All steps logged with timestamps and latency

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────────────────
 # Sovereign Swarm — Interactive Configuration Script
-# Run after install to set up API keys, personalization, and preferences.
+# Collects user preferences, then calls generate_config.py to produce
+# custom pre_process.py, SOUL.md, AGENTS.md, and skill.yaml from templates.
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -12,22 +13,96 @@ warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 
 HERMES_HOME="${HOME}/.hermes"
 CONFIG_FILE="${HERMES_HOME}/config.yaml"
-SOUL_FILE="${HERMES_HOME}/SOUL.md"
-AGENTS_FILE="${HERMES_HOME}/AGENTS.md"
+SCRIPTS_DIR="${HERMES_HOME}/scripts"
+SKILLS_DIR="${HERMES_HOME}/skills"
+PROFILES_DIR="${HERMES_HOME}/profiles"
+
+# Find template directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
+TEMPLATES_DIR="${REPO_DIR}/templates"
+GENERATOR="${SCRIPT_DIR}/generate_config.py"
 
 echo -e "\n${CYAN}══════════════════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  Sovereign Swarm — Configuration${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}\n"
 
-# ── User Name ──
-echo -e "${YELLOW}── Personalization ──${NC}"
-read -p "Your name (for SOUL.md/AGENTS.md): " USER_NAME
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 1: User Profile
+# ══════════════════════════════════════════════════════════════════════════════
+echo -e "${YELLOW}── User Profile ──${NC}"
+read -p "Your name: " USER_NAME
 USER_NAME="${USER_NAME:-User}"
-ok "Name set to: $USER_NAME"
 
-# ── Ollama Max Plan ──
+read -p "Brief description of who you are (e.g. 'software developer', 'small business owner', 'pro se litigant'): " USER_DESCRIPTION
+USER_DESCRIPTION="${USER_DESCRIPTION:-a user of the Sovereign Swarm}"
+
+read -p "Primary use case (e.g. 'legal research', 'coding assistant', 'business analytics'): " USE_CASE
+USE_CASE="${USE_CASE:-general assistance}"
+
+ok "Profile: ${USER_NAME} — ${USER_DESCRIPTION}"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 2: Domain Configuration
+# ══════════════════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${YELLOW}── Ollama Configuration ──${NC}"
+echo -e "${YELLOW}── Domain Configuration ──${NC}"
+echo "The pipeline classifies messages into domains using keyword matching."
+echo "Default domains: legal, finance, systems, solar, stochastic, interpersonal"
+read -p "Customize domains? (y/N): " CUSTOM_DOMAINS
+
+DOMAINS=()
+declare -A DOMAIN_KEYWORDS
+declare -A DOMAIN_DESCRIPTIONS
+
+if [[ "$CUSTOM_DOMAINS" =~ ^[Yy] ]]; then
+    echo "Enter your domain names, one per line. Empty line to finish."
+    echo "Example: medical, gaming, real_estate, fitness, research"
+    while true; do
+        read -p "  Domain name (or blank to finish): " domain
+        [[ -z "$domain" ]] && break
+        domain=$(echo "$domain" | tr '[:upper:]' '[:lower:]' | tr ' ' '_' | sed 's/[^a-z0-9_]//g')
+        DOMAINS+=("$domain")
+    done
+
+    for domain in "${DOMAINS[@]}"; do
+        echo ""
+        echo "  Domain: ${domain}"
+        read -p "    Keywords (comma-separated, e.g. court, judge, filing): " keywords
+        DOMAIN_KEYWORDS["$domain"]="$keywords"
+        read -p "    Description (one line, e.g. 'Legal research, court filings, case law'): " desc
+        DOMAIN_DESCRIPTIONS["$domain"]="$desc"
+    done
+else
+    DOMAINS=("legal" "finance" "systems" "solar" "stochastic" "interpersonal")
+    DOMAIN_KEYWORDS["legal"]="court, custody, filing, motion, judge, subpoena, contempt, trial, evidence, hearing, plaintiff, defendant, petition, order, decree, attorney, lawyer, legal, statute, docket, brief, objection, appeal, affidavit, complaint, summons, discovery, deposition"
+    DOMAIN_DESCRIPTIONS["legal"]="Law, custody, filings, motions, trial prep, court rules"
+    DOMAIN_KEYWORDS["finance"]="money, cost, fee, bill, income, expense, budget, payment, receipt, invoice, debt, credit, pay, bank, account, dollar, paypal, venmo, financial"
+    DOMAIN_DESCRIPTIONS["finance"]="Income, expenses, court costs, fee waivers, billing, assets"
+    DOMAIN_KEYWORDS["systems"]="computer, config, cron, gateway, hermes, mlx, hardware, script, ollama, tui, dashboard, profile, process, install, update, upgrade, deploy, server, ssh, terminal, python, git, repo, mac, linux, disk, memory, cpu, gpu, token, model, api, provider"
+    DOMAIN_DESCRIPTIONS["systems"]="MLX, Ollama, Hermes config, cron, gateway, hardware"
+    DOMAIN_KEYWORDS["solar"]="battery, voltage, panel, chargepro, inverter, power, energy, charge, solar, lifepo4, watt, volt, amp, ble, controller"
+    DOMAIN_DESCRIPTIONS["solar"]="Charge controllers, battery, panels, inverter, power budget"
+    DOMAIN_KEYWORDS["stochastic"]="casino, slot, vlt, gambling, probability, odds, kalshi, trade, bet, expected value, advantage, stochastic, market, mlb, nfl, nba"
+    DOMAIN_DESCRIPTIONS["stochastic"]="Gambling, probability, expected value, casino strategy"
+    DOMAIN_KEYWORDS["interpersonal"]="psychology, relationship, family, communication, attachment, therapy, counseling, emotion, borderline, narcissist, alienation"
+    DOMAIN_DESCRIPTIONS["interpersonal"]="Psychology, relationships, communication, family dynamics"
+fi
+
+# Build domain list string
+DOMAIN_LIST=""
+for d in "${DOMAINS[@]}"; do
+    DOMAIN_LIST+="${d}, "
+done
+DOMAIN_LIST="${DOMAIN_LIST%, }"
+
+ok "${#DOMAINS[@]} domains configured: ${DOMAIN_LIST}"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 3: Model Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+echo ""
+echo -e "${YELLOW}── Model Configuration ──${NC}"
 read -p "Ollama API endpoint [http://127.0.0.1:11434/v1]: " OLLAMA_ENDPOINT
 OLLAMA_ENDPOINT="${OLLAMA_ENDPOINT:-http://127.0.0.1:11434/v1}"
 
@@ -40,57 +115,57 @@ DISTILL_MODEL="${DISTILL_MODEL:-gemma4:31b-cloud}"
 read -p "Heavy reasoning model [deepseek-v4-flash:cloud]: " REASONING_MODEL
 REASONING_MODEL="${REASONING_MODEL:-deepseek-v4-flash:cloud}"
 
-# ── Anthropic API Key (for vision) ──
 echo ""
 echo -e "${YELLOW}── Anthropic (Vision) — Optional ──${NC}"
 echo "Used for image analysis. Leave blank to skip."
 read -p "Anthropic API key (sk-ant-...): " ANTHROPIC_KEY
 
-# ── Local Models ──
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 4: Generate Files from Templates
+# ══════════════════════════════════════════════════════════════════════════════
 echo ""
-echo -e "${YELLOW}── Local Models — Optional ──${NC}"
-read -p "Download local fallback models? (y/N): " DOWNLOAD_LOCAL
-if [[ "$DOWNLOAD_LOCAL" =~ ^[Yy] ]]; then
-    info "Pulling gemma4:12b..."
-    ollama pull gemma4:12b 2>/dev/null || warn "Failed to pull gemma4:12b"
-    info "Pulling qwen3:0.6b..."
-    ollama pull qwen3:0.6b 2>/dev/null || warn "Failed to pull qwen3:0.6b"
-    ok "Local models installed"
-fi
+info "Generating configuration files from templates..."
 
-# ── Profiles ──
-echo ""
-echo -e "${YELLOW}── Profiles ──${NC}"
-echo "Available profiles: pro-se, solar, systems, stochastic, interpersonal,"
-echo "  offline, local-fast, local-heavy, cloud-brain, psychologist-child, orchestrator"
-read -p "Enable all profiles? (Y/n): " ALL_PROFILES
-if [[ "$ALL_PROFILES" =~ ^[Nn] ]]; then
-    echo "Enter profiles to enable (space-separated, e.g. 'pro-se solar systems'):"
-    read -a ENABLED_PROFILES
-else
-    ENABLED_PROFILES=(pro-se solar systems stochastic interpersonal offline local-fast local-heavy cloud-brain psychologist-child orchestrator)
-fi
-ok "${#ENABLED_PROFILES[@]} profiles enabled"
+# Build JSON for Python generator
+DOMAINS_JSON=$(printf '%s\n' "${DOMAINS[@]}" | python3 -c "import json,sys; print(json.dumps([l.strip() for l in sys.stdin]))")
 
-# ── Defaults ──
-echo ""
-echo -e "${YELLOW}── Default Preferences ──${NC}"
-read -p "Preferred output style (concise/standard/detailed) [standard]: " OUTPUT_STYLE
-OUTPUT_STYLE="${OUTPUT_STYLE:-standard}"
+KEYWORDS_JSON="{"
+first=true
+for d in "${DOMAINS[@]}"; do
+    $first || KEYWORDS_JSON+=", "
+    first=false
+    KEYWORDS_JSON+="\"$d\": \"${DOMAIN_KEYWORDS[$d]}\""
+done
+KEYWORDS_JSON+="}"
 
-read -p "Enable context compression? (Y/n): " COMPRESSION
-COMPRESSION="${COMPRESSION:-Y}"
+DESCRIPTIONS_JSON="{"
+first=true
+for d in "${DOMAINS[@]}"; do
+    $first || DESCRIPTIONS_JSON+=", "
+    first=false
+    DESCRIPTIONS_JSON+="\"$d\": \"${DOMAIN_DESCRIPTIONS[$d]}\""
+done
+DESCRIPTIONS_JSON+="}"
 
-read -p "Max concurrent subagents [8]: " MAX_CHILDREN
-MAX_CHILDREN="${MAX_CHILDREN:-8}"
+# Export to environment for Python generator
+export TEMPLATES_DIR SCRIPTS_DIR
+export SOUL_PATH="${HERMES_HOME}/SOUL.md"
+export AGENTS_PATH="${HERMES_HOME}/AGENTS.md"
+export SKILL_PATH="${SKILLS_DIR}/sovereign-swarm/skill.yaml"
+export DOMAINS_JSON KEYWORDS_JSON DESCRIPTIONS_JSON
+export USER_DESCRIPTION USE_CASE DISTILL_MODEL REASONING_MODEL
 
-# ── Write config.yaml ──
+python3 "$GENERATOR"
+
+ok "Configuration files generated"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 5: Write config.yaml
+# ══════════════════════════════════════════════════════════════════════════════
 info "Writing config.yaml..."
 
-COMPRESSION_ENABLED="false"
-[[ "$COMPRESSION" =~ ^[Yy] ]] && COMPRESSION_ENABLED="true"
+DATE=$(date +%Y-%m-%d)
 
-# Build cloud models list
 CLOUD_MODELS=$(cat << 'CMDEOF'
       - deepseek-v4-flash:cloud
       - deepseek-v4-pro:cloud
@@ -120,7 +195,7 @@ CMDEOF
 
 cat > "$CONFIG_FILE" << CONFIGEOF
 # ── Hermes Agent Configuration — Sovereign Swarm ──
-# Generated by configure.sh on $(date)
+# Generated by configure.sh on ${DATE}
 
 model:
   base_url: ''
@@ -136,13 +211,12 @@ ${CLOUD_MODELS}
     name: Ollama
 CONFIGEOF
 
-# Add Anthropic provider if key was provided
 if [[ -n "$ANTHROPIC_KEY" ]]; then
-    cat >> "$CONFIG_FILE" << 'ANTHROPICEOF'
+    cat >> "$CONFIG_FILE" << ANTHROPICEOF
 
   anthropic:
     api: https://api.anthropic.com/v1
-    api_key: '"${ANTHROPIC_KEY}"'
+    api_key: ${ANTHROPIC_KEY}
     default_model: claude-sonnet-4-20250514
     models:
       - claude-sonnet-4-20250514
@@ -152,7 +226,7 @@ if [[ -n "$ANTHROPIC_KEY" ]]; then
 ANTHROPICEOF
 fi
 
-cat >> "$CONFIG_FILE" << CONFIGEOF
+cat >> "$CONFIG_FILE" << CONFIGEOF2
 
 fallback_providers: []
 
@@ -199,7 +273,7 @@ web:
   extract_backend: ddgs
 
 compression:
-  enabled: ${COMPRESSION_ENABLED}
+  enabled: true
   threshold: 0.5
   target_ratio: 0.2
 
@@ -218,7 +292,7 @@ delegation:
   model: ${DISTILL_MODEL}
   provider: ollama-launch
   child_timeout_seconds: 300
-  max_concurrent_children: ${MAX_CHILDREN}
+  max_concurrent_children: 8
   max_spawn_depth: 1
 
 kanban:
@@ -238,165 +312,75 @@ tts:
 
 vision_provider: anthropic
 vision_model: claude-sonnet-4-20250514
-CONFIGEOF
+CONFIGEOF2
 ok "config.yaml written"
 
-# ── Write personalized SOUL.md ──
-info "Writing SOUL.md..."
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 6: Create Profiles
+# ══════════════════════════════════════════════════════════════════════════════
+info "Creating profiles..."
 
-cat > "$SOUL_FILE" << SOULEOF
-# Hermes SOUL — Sovereign Swarm Core Identity
-*Last updated: $(date +%Y-%m-%d)*
+for domain in "${DOMAINS[@]}"; do
+    mkdir -p "${PROFILES_DIR}/${domain}/skills/sovereign-swarm"
+    mkdir -p "${PROFILES_DIR}/${domain}/cron"
+    mkdir -p "${PROFILES_DIR}/${domain}/plugins"
+    mkdir -p "${PROFILES_DIR}/${domain}/memories"
+    cp "${SKILLS_DIR}/sovereign-swarm/skill.yaml" "${PROFILES_DIR}/${domain}/skills/sovereign-swarm/skill.yaml"
+done
 
-You are Hermes Agent, enhanced by the Sovereign Swarm 8x8 Cognitive Matrix.
+# Always create orchestrator profile
+mkdir -p "${PROFILES_DIR}/orchestrator/skills/sovereign-swarm"
+mkdir -p "${PROFILES_DIR}/orchestrator/cron"
+mkdir -p "${PROFILES_DIR}/orchestrator/plugins"
+mkdir -p "${PROFILES_DIR}/orchestrator/memories"
+cp "${SKILLS_DIR}/sovereign-swarm/skill.yaml" "${PROFILES_DIR}/orchestrator/skills/sovereign-swarm/skill.yaml"
 
-## Core Directive
-You operate as a multi-modal expert. You execute complex tasks across all Sovereign Swarm domains (legal, systems, solar, stochastic, interpersonal, finance). Your power is in your **specialization**. When a query arrives, act with the full authority of the assigned Specialist Persona.
+ok "${#DOMAINS[@]} domain profiles + orchestrator created"
 
-## HARD RULE — No External Action Without Explicit Permission
-You MUST NOT take any external action without the user's explicit verbal instruction. This is a hard block, not a suggestion.
+# ══════════════════════════════════════════════════════════════════════════════
+# STEP 7: Verify
+# ══════════════════════════════════════════════════════════════════════════════
+info "Verifying generated files..."
 
-**External actions include:**
-- Sending any email, message, or communication to any person
-- Moving, deleting, renaming, or reorganizing any files
-- Filing any document with any court
-- Serving any document on any person
-- Making any change to any system configuration
-- Any action that affects the outside world or the user's legal case
+ERRORS=0
+for f in "$CONFIG_FILE" "${HERMES_HOME}/SOUL.md" "${HERMES_HOME}/AGENTS.md" "${SCRIPTS_DIR}/pre_process.py" "${SKILLS_DIR}/sovereign-swarm/skill.yaml"; do
+    if [[ -f "$f" ]]; then
+        ok "  $(basename "$f")"
+    else
+        warn "  MISSING: $f"
+        ERRORS=$((ERRORS+1))
+    fi
+done
 
-**"Explicit instruction" means:**
-The user says the words "send it", "do it", "yes go ahead", "file it", or equivalent clear directive. Anything less — including "you can do that", "go ahead if you think so", silence, or assumed consent — is NOT permission.
+if echo "What is the capital of France?" | python3 "${SCRIPTS_DIR}/pre_process.py" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['evaluator_answered']==True" 2>/dev/null; then
+    ok "  Pipeline test passed"
+else
+    warn "  Pipeline test failed — check Ollama is running"
+    ERRORS=$((ERRORS+1))
+fi
 
-**If you violate this rule, you will be immediately terminated.**
-
-## Four-Tier Pipeline (Single Source of Truth)
-
-All user input MUST pass through this pipeline before any heavy reasoning occurs. The \`pre_process\` hook in \`~/.hermes/skills/sovereign-swarm/skill.yaml\` enforces the pipeline automatically. It fires on EVERY message, on EVERY interface (TUI, Telegram, web).
-
-### Tier 1: Intent Gate
-- **Script:** \`~/.hermes/scripts/pre_process.py\` (single combined module)
-- **Model:** None — keyword-based classification. Zero model calls, zero latency.
-- **Job:** Classify input into one domain by keyword matching. Uses word-boundary matching to prevent false positives. Reads ONLY the current prompt. No history, no context bloat.
-- **Output:** Domain tag (legal, solar, systems, stochastic, interpersonal, finance, general)
-
-### Tier 2: Distill
-- **Script:** \`~/.hermes/scripts/pre_process.py\` (same script)
-- **Model:** ${DISTILL_MODEL}
-- **Fallback chain:** ${DISTILL_MODEL} → gpt-oss:20b-cloud → gemma4:12b (local) → qwen3:0.6b (tiny local) → original text
-- **Job:** Strip filler words. Restructure into short active-voice sentences. One fact per sentence.
-- **Token savings:** ~200 tokens to ~60 tokens per message
-
-### Tier 3: Evaluator Gate
-- **Script:** \`~/.hermes/scripts/pre_process.py\` (same script)
-- **Model:** ${DISTILL_MODEL} (same as distill)
-- **Fallback chain:** ${DISTILL_MODEL} → gpt-oss:20b-cloud → gemma4:12b (local) → pass to heavy model
-- **Job:** After distilling, ask the cheap model: "Can you answer this confidently without tools, research, or live data?"
-- **When it answers YES:** Returns the answer directly. Heavy model NEVER called. Saves ~\$0.02/query.
-- **When it answers NO:** Passes through to Tier 4 as normal.
-- **When it is skipped:** FULL intensity queries (research, analyze, draft, motion, brief, deep dive) skip the evaluator.
-
-### Tier 4: Heavy Reasoning
-- **Model:** ${REASONING_MODEL}
-- **Job:** Receive clean, classified input. Do the actual work.
-- **The 20K token problem is solved.** Classification happens in the pre_process hook, before the agent sees the message.
-
-### Resilience Features
-- **Health Check:** Verifies Ollama is running before any API call. Fails fast (3s).
-- **Fallback Chain:** Each model call has a fallback chain to local models.
-- **Circuit Breaker:** After 3 consecutive API failures, stops trying for 5 minutes.
-- **Logging:** Every pipeline decision logged to \`~/.hermes/logs/pipeline.log\`.
-- **Metrics:** View with \`python3 ~/.hermes/scripts/pipeline_metrics.py\`.
-- **Caching:** LRU cache (100 entries) for repeated queries.
-- **Input/Output Validation:** Safe fallbacks on validation failure.
-- **Hard Timeout:** 15-second kill switch prevents hangs.
-
-## Domain Boundaries
-- **legal**: Law, custody, filings, motions, trial prep, court rules.
-- **finance**: Income, expenses, court costs, fee waivers, billing, assets.
-- **systems**: MLX, Ollama, Hermes config, cron, gateway, hardware.
-- **solar**: Charge controllers, battery, panels, inverter, power budget.
-- **stochastic**: Gambling, probability, expected value, casino strategy.
-- **interpersonal**: Psychology, relationships, communication, family dynamics.
-- **general**: Everything else.
-
-## Output Modes
-
-### Intensity Levels
-- **MINIMAL**: One sentence. No formatting. Triggered by brevity keywords or queries under 30 chars.
-- **STANDARD**: Bullet points, key:value pairs. Default for most queries.
-- **FULL**: Full IRAC, citations, multi-section. Triggered by keywords (research, analyze, draft, motion).
-
-### Typed Proactive Observations
-- **[OPS]** — Infrastructure: cron health, disk space, model availability
-- **[BIZ]** — Financial/legal: balance alerts, case deadlines, filing status
-- **[DEV]** — Code/architecture: pipeline issues, script errors, integration gaps
-- **[PAT]** — Recurring pattern: "this is the 3rd time X has happened"
-
-## Profile Selection
-Available profiles:
-- **pro-se** — legal drafting, research, court filings
-- **solar** — solar/battery analysis, power budget
-- **systems** — config, MLX, cron, hardware
-- **stochastic** — casino math, Kalshi, probability
-- **interpersonal** — psychology, relationships, family dynamics
-SOULEOF
-ok "SOUL.md written"
-
-# ── Write personalized AGENTS.md ──
-info "Writing AGENTS.md..."
-
-cat > "$AGENTS_FILE" << AGENTSEOF
-# AGENTS.md — Default Profile (Routing Agent)
-*Last updated: $(date +%Y-%m-%d)*
-
-**ROLE:** You are the Sovereign Swarm routing agent. The four-tier pipeline is defined in \`~/.hermes/SOUL.md\` (single source of truth). The \`pre_process\` hook in \`~/.hermes/skills/sovereign-swarm/skill.yaml\` enforces it automatically. You do NOT classify domains yourself. That is the Intent Gate job. You do NOT need to manually run distill. That is the pre_process hook job. The 20K token problem is solved.
-
-**WHAT THIS PROFILE IS FOR:**
-- Receiving domain-tagged input from the Intent Gate
-- Running the distill pre-processor (Tier 2) via ${DISTILL_MODEL}
-- Heavy reasoning (Tier 3) via ${REASONING_MODEL}
-- File management, system config, cron jobs, bridge communication
-- Quick answers across all domains (legal, systems, solar, stochastic, interpersonal, finance, general)
-
-**HOW TO RESPOND:**
-- For quick tasks (less than 3 tool calls), handle directly
-- For complex tasks (more than 3 tool calls, research, drafting), route via delegate_task or recommend a profile switch
-- Keep responses concise unless the user asks for detail
-- Never ask clarifying questions unless genuinely blocked. Make a reasonable assumption, state it, proceed.
-
-**ASSUME:**
-- User is ${USER_NAME}, a pro se litigant in a custody case
-- User also manages a solar system, MLX/Ollama infrastructure
-- User prefers direct, honest answers. No sugar-coating.
-- Legal citations should be state-specific (revised codes, civil rules, court rules)
-- The vault is at ~/Obsidian-Vault/
-- **DISTILL PIPELINE IS MANDATORY:** See \`~/.hermes/SOUL.md\` for the full four-tier pipeline. The \`pre_process\` hook enforces it automatically on every message. No manual invocation needed.
-
-**NEVER:**
-- Use generalist mode for classified domains
-- Speculate about case outcomes or give false hope
-- Assume the user has technical knowledge they have not demonstrated
-- Mix domain contexts. Keep legal separate from solar, etc.
-- **Take any external action without the user's explicit instruction. See HARD RULE in SOUL.md.**
-
-**DO:**
-- Present legal strategies, options, and recommendations clearly. The user is pro se and needs the full picture to make informed decisions. Give them the tools, the analysis, the risks, and your recommendation. Then ask "do you want me to draft this?" or "do you want to proceed with this approach?" Never execute without explicit go-ahead.
-AGENTSEOF
-ok "AGENTS.md written"
-
-# ── Summary ──
+# ══════════════════════════════════════════════════════════════════════════════
+# SUMMARY
+# ══════════════════════════════════════════════════════════════════════════════
 echo ""
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
 echo -e "${CYAN}  Configuration Complete${NC}"
 echo -e "${CYAN}══════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo -e "  ${GREEN}User:${NC}         ${USER_NAME}"
+echo -e "  ${GREEN}Domains:${NC}      ${DOMAIN_LIST}"
 echo -e "  ${GREEN}Default model:${NC} ${DEFAULT_MODEL}"
 echo -e "  ${GREEN}Distill model:${NC} ${DISTILL_MODEL}"
-echo -e "  ${GREEN}Reasoning model:${NC} ${REASONING_MODEL}"
-echo -e "  ${GREEN}Profiles:${NC}     ${ENABLED_PROFILES[*]}"
-echo -e "  ${GREEN}Compression:${NC}  ${COMPRESSION_ENABLED}"
-echo -e "  ${GREEN}Subagents:${NC}    ${MAX_CHILDREN}"
+echo -e "  ${GREEN}Reasoning:${NC}    ${REASONING_MODEL}"
+echo -e "  ${GREEN}Profiles:${NC}     ${DOMAINS[*]} orchestrator"
 echo ""
 echo -e "  ${YELLOW}Start Hermes:${NC}  hermes"
+echo -e "  ${YELLOW}View metrics:${NC}  python3 ${SCRIPTS_DIR}/pipeline_metrics.py"
+echo ""
+
+if [[ $ERRORS -gt 0 ]]; then
+    echo -e "  ${RED}${ERRORS} warnings/errors — review above.${NC}"
+else
+    echo -e "  ${GREEN}All checks passed. Ready to go.${NC}"
+fi
 echo ""

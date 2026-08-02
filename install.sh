@@ -134,9 +134,22 @@ download_file() {
 # Download core pipeline files
 download_file "${RAW_BASE}/scripts/pre_process.py" "${SCRIPTS_DIR}/pre_process.py"
 download_file "${RAW_BASE}/scripts/pipeline_metrics.py" "${SCRIPTS_DIR}/pipeline_metrics.py"
+download_file "${RAW_BASE}/scripts/generate_config.py" "${SCRIPTS_DIR}/generate_config.py"
 download_file "${RAW_BASE}/skills/sovereign-swarm/skill.yaml" "${SKILLS_DIR}/sovereign-swarm/skill.yaml"
-download_file "${RAW_BASE}/templates/SOUL.md" "${HERMES_HOME}/SOUL.md"
-download_file "${RAW_BASE}/templates/AGENTS.md" "${HERMES_HOME}/AGENTS.md"
+
+if $RUN_CONFIGURE; then
+    # Download templates for config generation
+    download_file "${RAW_BASE}/templates/pre_process.py.j2" "${SCRIPTS_DIR}/../templates/pre_process.py.j2"
+    download_file "${RAW_BASE}/templates/SOUL.md.j2" "${SCRIPTS_DIR}/../templates/SOUL.md.j2"
+    download_file "${RAW_BASE}/templates/AGENTS.md.j2" "${SCRIPTS_DIR}/../templates/AGENTS.md.j2"
+    download_file "${RAW_BASE}/templates/skill.yaml.j2" "${SCRIPTS_DIR}/../templates/skill.yaml.j2"
+    download_file "${RAW_BASE}/scripts/configure.sh" "${SCRIPTS_DIR}/configure.sh"
+    chmod +x "${SCRIPTS_DIR}/configure.sh" "${SCRIPTS_DIR}/generate_config.py"
+else
+    # Download static defaults
+    download_file "${RAW_BASE}/templates/SOUL.md" "${HERMES_HOME}/SOUL.md"
+    download_file "${RAW_BASE}/templates/AGENTS.md" "${HERMES_HOME}/AGENTS.md"
+fi
 
 chmod +x "${SCRIPTS_DIR}/pre_process.py" "${SCRIPTS_DIR}/pipeline_metrics.py"
 ok "Pipeline files installed"

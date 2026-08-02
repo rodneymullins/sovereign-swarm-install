@@ -57,14 +57,61 @@ Hard Timeout (15s kill switch)
 
 ## Configuration
 
-Run `configure.sh` after install to set up:
+Run the installer with `--configure` to set up your preferences:
 
-- **Your name** — for SOUL.md and AGENTS.md personalization
-- **Ollama Max plan** — API endpoint for cloud models
-- **Anthropic API key** — for vision model access
-- **Local models** — whether to download fallback models
-- **Profiles** — which domain profiles to enable
-- **Defaults** — preferred model, output style, notification preferences
+```bash
+curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/install.sh | bash -s -- --configure
+```
+
+You'll be prompted for:
+
+1. **Your profile** — name, description, use case
+2. **Your domains** — define your own or use defaults (legal, finance, systems, solar, stochastic, interpersonal)
+3. **Keywords** — what words trigger each domain
+4. **Models** — Ollama endpoint, default model, distill model, reasoning model
+5. **API keys** — Anthropic (optional, for vision)
+
+### Customizing Domains
+
+The pipeline classifies every message into a domain using keyword matching. You can define any domains you want:
+
+```
+Domain name: medical
+  Keywords: doctor, diagnosis, treatment, prescription, patient, symptom
+  Description: Healthcare, medical research, clinical trials
+
+Domain name: gaming
+  Keywords: game, steam, xbox, playstation, fps, rpg, multiplayer
+  Description: Video games, game development, gaming hardware
+```
+
+Each domain gets its own profile directory with the pre_process hook wired in.
+
+### Manual Customization
+
+Edit these files after install to tweak your setup:
+
+| File | What to Change |
+|------|----------------|
+| `~/.hermes/scripts/pre_process.py` | `INTENT_KEYWORDS` dict — add/remove domains and keywords |
+| `~/.hermes/SOUL.md` | Domain Boundaries section |
+| `~/.hermes/AGENTS.md` | ASSUME section — your role and use case |
+| `~/.hermes/skills/sovereign-swarm/skill.yaml` | `specialists` list |
+| `~/.hermes/profiles/` | Add/remove profile directories |
+
+### Re-running Configuration
+
+```bash
+# Re-run the interactive config
+curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-install/main/scripts/configure.sh | bash
+```
+
+Or if you cloned the repo:
+
+```bash
+cd sovereign-swarm-install
+bash scripts/configure.sh
+```
 
 ## Requirements
 
