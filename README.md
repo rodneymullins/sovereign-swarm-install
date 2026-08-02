@@ -75,16 +75,26 @@ You'll be prompted for:
 
 Domains are categories the pipeline uses to understand what you're talking about. Name them after your areas of work, interest, or expertise.
 
-The pipeline classifies every message into a domain using keyword matching. You can define any domains you want:
+The configure script shows a **checkbox menu** of default domains. Toggle them on/off by number:
 
 ```
-Domain name: cardiology
-  Keywords: heart, artery, stent, bypass, echocardiogram, cholesterol
-  Description: Cardiology, cardiovascular health, heart disease treatment
+  [✓]  1) legal
+  [✓]  2) finance
+  [✓]  3) systems
+  [ ]  4) solar
+  [✓]  5) stochastic
+  [✓]  6) interpersonal
 
-Domain name: fps_games
-  Keywords: aim, headshot, sensitivity, crosshair, recoil, kd_ratio
-  Description: First-person shooter games, competitive FPS, aim training
+  Toggle number (or blank to finish):
+```
+
+Then you can add custom domains. Each domain gets keywords and a description:
+
+```
+  ── cardiology ──
+    Keywords are words that trigger this domain.
+    Keywords (comma-separated): heart, artery, stent, bypass, echo, cholesterol
+    Description (one line): Cardiology, cardiovascular health, heart disease treatment
 ```
 
 **How it works:** Every message is checked against ALL domains' keywords. The domain with the most keyword matches wins. If nothing matches, it falls to "general". You can have as many domains as you want — the check is zero-cost (no model calls, just string matching).
@@ -93,7 +103,7 @@ Domain name: fps_games
 - Use short, descriptive names (snake_case if multi-word)
 - Pick 5-15 keywords per domain that you actually use in conversation
 - Don't overlap keywords between domains — if two domains share too many words, messages will bounce between them
-- Add a "general" catch-all is automatic — no need to define it
+- "general" is automatic — no need to define it
 
 Each domain gets its own profile directory with the pre_process hook wired in.
 

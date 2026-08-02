@@ -56,16 +56,73 @@ echo "    A gamer might use:   fps_games, rpgs, hardware_builds, streaming"
 echo "    A lawyer might use:  family_law, criminal_defense, contracts, appeals"
 echo "    A trader might use:  crypto, equities, options, macro_economics"
 echo ""
-echo "Default domains: legal, finance, systems, solar, stochastic, interpersonal"
-read -p "Customize domains? (y/N): " CUSTOM_DOMAINS
 
-DOMAINS=()
-declare -A DOMAIN_KEYWORDS
-declare -A DOMAIN_DESCRIPTIONS
+# ── Checkbox menu function ──
+# Usage: checkbox_menu ITEM1 ITEM2 ITEM3 ...
+# Returns: selected items in SELECTED array
+checkbox_menu() {
+    local items=("$@")
+    local selected=()
+    local num_items=${#items[@]}
+    
+    # Initialize all as selected
+    for ((i=0; i<num_items; i++)); do
+        selected[$i]=1
+    done
+    
+    while true; do
+        echo ""
+        echo "  Toggle domains on/off by number. Press Enter when done."
+        echo ""
+        for ((i=0; i<num_items; i++)); do
+            local mark=" "
+            [[ ${selected[$i]} -eq 1 ]] && mark="✓"
+            printf "  [%s] %2d) %s\n" "$mark" $((i+1)) "${items[$i]}"
+        done
+        echo ""
+        read -p "  Toggle number (or blank to finish): " toggle
+        [[ -z "$toggle" ]] && break
+        if [[ "$toggle" =~ ^[0-9]+$ ]] && (( toggle >= 1 && toggle <= num_items )); then
+            idx=$((toggle - 1))
+            if [[ ${selected[$idx]} -eq 1 ]]; then
+                selected[$idx]=0
+            else
+                selected[$idx]=1
+            fi
+        else
+            echo "  Invalid number. Enter 1-$num_items or blank to finish."
+        fi
+    done
+    
+    # Build result
+    DOMAINS=()
+    for ((i=0; i<num_items; i++)); do
+        if [[ ${selected[$i]} -eq 1 ]]; then
+            DOMAINS+=("${items[$i]}")
+        fi
+    done
+}
 
-if [[ "$CUSTOM_DOMAINS" =~ ^[Yy] ]]; then
+# ── Default domain pool ──
+DEFAULT_DOMAIN_POOL=(
+    "legal"
+    "finance"
+    "systems"
+    "solar"
+    "stochastic"
+    "interpersonal"
+)
+
+echo "Default domains available:"
+checkbox_menu "${DEFAULT_DOMAIN_POOL[@]}"
+
+echo ""
+echo "  Selected: ${DOMAINS[*]:-none}"
+read -p "Add custom domains? (y/N): " ADD_CUSTOM
+
+if [[ "$ADD_CUSTOM" =~ ^[Yy] ]]; then
     echo ""
-    echo "Enter your domain names, one per line. Empty line to finish."
+    echo "Enter custom domain names, one per line. Empty line to finish."
     echo "Use short, descriptive names (snake_case if multi-word)."
     while true; do
         read -p "  Domain name (or blank to finish): " domain
@@ -73,33 +130,64 @@ if [[ "$CUSTOM_DOMAINS" =~ ^[Yy] ]]; then
         domain=$(echo "$domain" | tr '[:upper:]' '[:lower:]' | tr ' ' '_' | sed 's/[^a-z0-9_]//g')
         DOMAINS+=("$domain")
     done
-
-    for domain in "${DOMAINS[@]}"; do
-        echo ""
-        echo "  Domain: ${domain}"
-        echo "    Keywords are words that trigger this domain. When you use them,"
-        echo "    the pipeline knows what you're talking about."
-        read -p "    Keywords (comma-separated, e.g. court, judge, filing): " keywords
-        DOMAIN_KEYWORDS["$domain"]="$keywords"
-        echo "    Description appears in SOUL.md and helps the agent understand the domain."
-        read -p "    Description (one line, e.g. 'Legal research, court filings, case law'): " desc
-        DOMAIN_DESCRIPTIONS["$domain"]="$desc"
-    done
-else
-    DOMAINS=("legal" "finance" "systems" "solar" "stochastic" "interpersonal")
-    DOMAIN_KEYWORDS["legal"]="court, custody, filing, motion, judge, subpoena, contempt, trial, evidence, hearing, plaintiff, defendant, petition, order, decree, attorney, lawyer, legal, statute, docket, brief, objection, appeal, affidavit, complaint, summons, discovery, deposition"
-    DOMAIN_DESCRIPTIONS["legal"]="Law, custody, filings, motions, trial prep, court rules"
-    DOMAIN_KEYWORDS["finance"]="money, cost, fee, bill, income, expense, budget, payment, receipt, invoice, debt, credit, pay, bank, account, dollar, paypal, venmo, financial"
-    DOMAIN_DESCRIPTIONS["finance"]="Income, expenses, court costs, fee waivers, billing, assets"
-    DOMAIN_KEYWORDS["systems"]="computer, config, cron, gateway, hermes, mlx, hardware, script, ollama, tui, dashboard, profile, process, install, update, upgrade, deploy, server, ssh, terminal, python, git, repo, mac, linux, disk, memory, cpu, gpu, token, model, api, provider"
-    DOMAIN_DESCRIPTIONS["systems"]="MLX, Ollama, Hermes config, cron, gateway, hardware"
-    DOMAIN_KEYWORDS["solar"]="battery, voltage, panel, chargepro, inverter, power, energy, charge, solar, lifepo4, watt, volt, amp, ble, controller"
-    DOMAIN_DESCRIPTIONS["solar"]="Charge controllers, battery, panels, inverter, power budget"
-    DOMAIN_KEYWORDS["stochastic"]="casino, slot, vlt, gambling, probability, odds, kalshi, trade, bet, expected value, advantage, stochastic, market, mlb, nfl, nba"
-    DOMAIN_DESCRIPTIONS["stochastic"]="Gambling, probability, expected value, casino strategy"
-    DOMAIN_KEYWORDS["interpersonal"]="psychology, relationship, family, communication, attachment, therapy, counseling, emotion, borderline, narcissist, alienation"
-    DOMAIN_DESCRIPTIONS["interpersonal"]="Psychology, relationships, communication, family dynamics"
 fi
+
+# If nothing selected, use all defaults
+if [[ ${#DOMAINS[@]} -eq 0 ]]; then
+    DOMAINS=("${DEFAULT_DOMAIN_POOL[@]}")
+    echo "  (using all defaults)"
+fi
+
+# ── Configure keywords and descriptions for each domain ──
+declare -A DOMAIN_KEYWORDS
+declare -A DOMAIN_DESCRIPTIONS
+
+# Pre-fill defaults
+DOMAIN_KEYWORDS["legal"]="court, custody, filing, motion, judge, subpoena, contempt, trial, evidence, hearing, plaintiff, defendant, petition, order, decree, attorney, lawyer, legal, statute, docket, brief, objection, appeal, affidavit, complaint, summons, discovery, deposition"
+DOMAIN_DESCRIPTIONS["legal"]="Law, custody, filings, motions, trial prep, court rules"
+DOMAIN_KEYWORDS["finance"]="money, cost, fee, bill, income, expense, budget, payment, receipt, invoice, debt, credit, pay, bank, account, dollar, paypal, venmo, financial"
+DOMAIN_DESCRIPTIONS["finance"]="Income, expenses, court costs, fee waivers, billing, assets"
+DOMAIN_KEYWORDS["systems"]="computer, config, cron, gateway, hermes, mlx, hardware, script, ollama, tui, dashboard, profile, process, install, update, upgrade, deploy, server, ssh, terminal, python, git, repo, mac, linux, disk, memory, cpu, gpu, token, model, api, provider"
+DOMAIN_DESCRIPTIONS["systems"]="MLX, Ollama, Hermes config, cron, gateway, hardware"
+DOMAIN_KEYWORDS["solar"]="battery, voltage, panel, chargepro, inverter, power, energy, charge, solar, lifepo4, watt, volt, amp, ble, controller"
+DOMAIN_DESCRIPTIONS["solar"]="Charge controllers, battery, panels, inverter, power budget"
+DOMAIN_KEYWORDS["stochastic"]="casino, slot, vlt, gambling, probability, odds, kalshi, trade, bet, expected value, advantage, stochastic, market, mlb, nfl, nba"
+DOMAIN_DESCRIPTIONS["stochastic"]="Gambling, probability, expected value, casino strategy"
+DOMAIN_KEYWORDS["interpersonal"]="psychology, relationship, family, communication, attachment, therapy, counseling, emotion, borderline, narcissist, alienation"
+DOMAIN_DESCRIPTIONS["interpersonal"]="Psychology, relationships, communication, family dynamics"
+
+echo ""
+echo -e "${YELLOW}── Configure Each Domain ──${NC}"
+echo "For each selected domain, set keywords and a description."
+echo "Press Enter to accept defaults where available."
+echo ""
+
+for domain in "${DOMAINS[@]}"; do
+    echo "  ── ${domain} ──"
+    
+    default_kw="${DOMAIN_KEYWORDS[$domain]:-}"
+    if [[ -n "$default_kw" ]]; then
+        echo "    Default keywords: ${default_kw}"
+        read -p "    Keywords (Enter for default): " keywords
+        keywords="${keywords:-$default_kw}"
+    else
+        echo "    Keywords are words that trigger this domain."
+        read -p "    Keywords (comma-separated): " keywords
+    fi
+    DOMAIN_KEYWORDS["$domain"]="$keywords"
+    
+    default_desc="${DOMAIN_DESCRIPTIONS[$domain]:-}"
+    if [[ -n "$default_desc" ]]; then
+        echo "    Default description: ${default_desc}"
+        read -p "    Description (Enter for default): " desc
+        desc="${desc:-$default_desc}"
+    else
+        echo "    Description appears in SOUL.md and helps the agent understand the domain."
+        read -p "    Description (one line): " desc
+    fi
+    DOMAIN_DESCRIPTIONS["$domain"]="$desc"
+    echo ""
+done
 
 # Build domain list string
 DOMAIN_LIST=""
