@@ -21,8 +21,19 @@ curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-insta
 | **Hermes Agent** | v0.19.1+ from GitHub |
 | **4-Tier Pipeline** | Intent Gate → Distill → Evaluator → Heavy Reasoning |
 | **Resilience Layer** | Health check, fallback chains, circuit breaker, logging, metrics, caching, validation, hard timeout |
-| **11 Profiles** | pro-se, solar, systems, stochastic, interpersonal, offline, local-fast, local-heavy, cloud-brain, psychologist-child, orchestrator |
+| **Domain Profiles** | One per domain — each with pre_process hook wired in |
 | **Ollama Models** | gemma4:12b + qwen3:0.6b for local fallback |
+
+## What You Can Add
+
+The installer sets up the foundation. These optional components extend it:
+
+| Component | What It Does | How to Add |
+|-----------|-------------|------------|
+| **Obsidian Vault** | Markdown knowledge base with 7,000+ indexed notes, entity profiles, case files, and reference materials | Clone or create a vault at `~/Obsidian-Vault/` |
+| **GraphRAG** | Microsoft GraphRAG indexing — turns your vault into a queryable knowledge graph with semantic search, entity resolution, and community detection | Run `graphrag-indexing` skill after vault is set up |
+| **Knowledge Base** | Hybrid search (semantic + FTS5) over distilled vault notes — 513 searchable chunks across all domains | Built-in via `knowledge_search.py` |
+| **Cron Jobs** | 30+ automated tasks: solar watchdog, email triage, Kalshi tracker, vault ingestion, daily briefs, swing detection | Configured via `hermes cron` |
 
 ## Pipeline Architecture
 
