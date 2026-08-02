@@ -112,7 +112,7 @@ You type: "So like, I was thinking about the custody case and I feel like we nee
 | Feature | What It Does |
 |---------|-------------|
 | **Health Check** | Verifies Ollama is running before any API call. Fails fast (3s) instead of waiting 30s. |
-| **Fallback Chains** | If the cloud model fails, tries local models before giving up. Distill: gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b → qwen3:0.6b → original text. |
+| **Fallback Chains** | If the cloud model fails, tries local models before giving up. Distill: gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b → original text. |
 | **Circuit Breaker** | After 3 consecutive API failures, stops trying for 5 minutes. Prevents cascading failures. State persists across restarts. |
 | **Logging** | Every pipeline decision logged with timestamps and latency. View at `~/.hermes/logs/pipeline.log`. |
 | **Metrics** | Tracks evaluator hit rate, distill success rate, latency (avg/P50/P95), domain distribution, circuit opens, cache hits. |

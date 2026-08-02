@@ -199,7 +199,7 @@ ok "Profiles created: legal, finance, systems, solar, stochastic, interpersonal,
 # ══════════════════════════════════════════════════════════════════════════════
 info "Checking Ollama models..."
 
-LOCAL_MODELS=("gemma4:12b" "qwen3:0.6b")
+LOCAL_MODELS=("gemma4:12b")
 for model in "${LOCAL_MODELS[@]}"; do
     if ollama list 2>/dev/null | grep -q "$model"; then
         ok "  $model already installed"

@@ -44,7 +44,7 @@ documentation: |
   ### Tier 2: Distill
   - Script: ~/.hermes/scripts/pre_process.py
   - Model: gemma4:31b-cloud (Level 2, faster, better grouping)
-  - Fallback: gpt-oss:20b-cloud → gemma4:12b (local) → qwen3:0.6b (tiny local) → original text
+  - Fallback: gpt-oss:20b-cloud → gemma4:12b (local) → original text
   - Strips filler words, restructures into short active-voice sentences
   - One fact per sentence. No idioms. No filler.
   - Token savings: ~200 tokens → ~60 tokens per message

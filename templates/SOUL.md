@@ -35,7 +35,7 @@ All user input MUST pass through this pipeline before any heavy reasoning occurs
 ### Tier 2: Distill
 - **Script:** `~/.hermes/scripts/pre_process.py` (same script)
 - **Model:** gemma4:31b-cloud (Level 2 — faster, better grouping)
-- **Fallback chain:** gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b (local) → qwen3:0.6b (tiny local) → original text
+- **Fallback chain:** gemma4:31b-cloud → gpt-oss:20b-cloud → gemma4:12b (local) → original text
 - **Job:** Strip filler words. Restructure into short active-voice sentences. One fact per sentence.
 - **Token savings:** ~200 tokens to ~60 tokens per message
 

@@ -56,7 +56,6 @@ FALLBACK_CHAIN_DISTILL = [
     "gemma4:31b-cloud",    # Level 2 cloud (faster, better quality)
     "gpt-oss:20b-cloud",   # Level 1 cloud (cheaper fallback)
     "gemma4:12b",          # Local 12B (7.6GB, always available)
-    "qwen3:0.6b",          # Tiny local (522MB, last resort)
 ]
 
 FALLBACK_CHAIN_EVALUATOR = [
