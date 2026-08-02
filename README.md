@@ -72,7 +72,7 @@ Hermes Agent is powerful out of the box. But it has one problem: **every message
 Every message passes through 4 tiers before the heavy model sees it:
 
 ```
-You type: "So like, I was thinking about the F25 case and I feel like we need to file
+You type: "So like, I was thinking about the custody case and I feel like we need to file
           a motion for contempt because the other side missed the last three weekends..."
 
          ▼
@@ -83,7 +83,7 @@ You type: "So like, I was thinking about the F25 case and I feel like we need to
          ▼
 [Tier 2: Distill]  ← Cheap model (gemma4:31b-cloud)
   Strips filler, restructures:
-  "File a contempt motion in the F25 case.
+  "File a contempt motion in the custody case.
    The other side missed three visitation weekends.
    Decide between show-cause and straight contempt."
 
@@ -101,7 +101,7 @@ You type: "So like, I was thinking about the F25 case and I feel like we need to
 
 **Real result from a 6,232-character ramble:**
 
-> *"File a contempt motion in the F25 case. The other side missed three visitation weekends. Decide between a show-cause motion and a straight contempt motion. Check if a fee waiver applies to post-decree motions. Verify the solar battery voltage; it may be low due to little sun. Confirm whether the new model on Frodo is still downloading or finished. Tell Julien the court has not set a visitation date yet."*
+> *"File a contempt motion in the custody case. The other side missed three visitation weekends. Decide between a show-cause motion and a straight contempt motion. Check if a fee waiver applies to post-decree motions. Verify the solar battery voltage; it may be low due to little sun. Confirm whether the new model download has finished. Tell the client the court has not set a visitation date yet."*
 
 **61% reduction.** Every topic extracted. Every filler word removed. The heavy model gets clean, organized input instead of a wall of text.
 
