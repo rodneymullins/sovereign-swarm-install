@@ -21,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/rodneymullins/sovereign-swarm-insta
 | **Hermes Agent** | v0.19.1+ from GitHub |
 | **4-Tier Pipeline** | Intent Gate → Distill → Evaluator → Heavy Reasoning |
 | **Resilience Layer** | Health check, fallback chains, circuit breaker, logging, metrics, caching, validation, hard timeout |
-| **Domain Profiles** | One per domain — each with pre_process hook wired in |
+| **Domain Profiles** | One per default domain — legal, finance, systems, solar, stochastic, interpersonal, health, career, education, plus orchestrator |
 | **Ollama Models** | gemma4:12b + qwen3:0.6b for local fallback |
 
 ## What You Can Add

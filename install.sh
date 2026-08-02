@@ -159,14 +159,15 @@ ok "Pipeline files installed"
 # ══════════════════════════════════════════════════════════════════════════════
 info "Installing profiles..."
 
-for profile in pro-se solar systems stochastic interpersonal offline local-fast local-heavy cloud-brain psychologist-child orchestrator; do
+# Default profiles match the 9 default domains
+for profile in legal finance systems solar stochastic interpersonal health career education orchestrator; do
     mkdir -p "${PROFILES_DIR}/${profile}/skills/sovereign-swarm"
     mkdir -p "${PROFILES_DIR}/${profile}/cron"
     mkdir -p "${PROFILES_DIR}/${profile}/plugins"
     mkdir -p "${PROFILES_DIR}/${profile}/memories"
     cp "${SKILLS_DIR}/sovereign-swarm/skill.yaml" "${PROFILES_DIR}/${profile}/skills/sovereign-swarm/skill.yaml"
 done
-ok "Profiles created: pro-se, solar, systems, stochastic, interpersonal, offline, local-fast, local-heavy, cloud-brain, psychologist-child, orchestrator"
+ok "Profiles created: legal, finance, systems, solar, stochastic, interpersonal, health, career, education, orchestrator"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # STEP 4: Install Ollama Models
