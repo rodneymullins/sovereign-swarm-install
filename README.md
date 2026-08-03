@@ -265,3 +265,20 @@ MIT
 <div align="center">
   <p>Built by <a href="https://github.com/rodneymullins">rodneymullins</a> · Sovereign Swarm</p>
 </div>
+
+---
+## 🛰️ A2A Connectivity (v1.0)
+
+Sovereign Swarm now uses the built-in Hermes A2A (Agent-to-Agent) protocol for cross-machine communication.
+
+### Setup
+1. Ensure `gateway.platforms.a2a` is enabled in `config.yaml` (port 9900).
+2. To pair a peer, add their A2A endpoint to your peer list:
+   ```yaml
+   gateway:
+     peers:
+       - name: "remote-machine"
+         endpoint: "a2a://<ip-address>:9900"
+   ```
+3. Use `a2a_send_message` and `a2a_receive_messages` tools to coordinate.
+

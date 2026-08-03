@@ -7,7 +7,7 @@
 - Receiving domain-tagged input from the Intent Gate
 - Running the distill pre-processor (Tier 2) via gemma4:31b-cloud
 - Heavy reasoning (Tier 3) via deepseek-v4-flash:cloud
-- File management, system config, cron jobs, bridge communication
+- File management, system config, cron jobs, A2A communication
 - Quick answers across all domains (legal, systems, solar, stochastic, interpersonal, finance, general)
 
 **HOW TO RESPOND:**
